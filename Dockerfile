@@ -24,10 +24,10 @@ EXPOSE 80
 EXPOSE 443
 
 # Set environment variables
-ENV DB_CONN_STRING=Server=pi41.home.lan,1433;Database=ClimateTrackr;User Id=sa;Password=qwer1234!;TrustServerCertificate=true
-ENV RABBITMQ_CONN_STRING=amqp://guest:guest@pi41.home.lan:5672/
-ENV RABBITMQ_EXCHANGE_NAME=climateTrackr_ex
-ENV RABBITMQ_ROUTING_KEY=climateTrackrKey
+ENV DB_CONN_STRING=<your_db_conn_string>
+ENV RABBITMQ_CONN_STRING=<Example:amqp://guest:guest@localhost:5672/>
+ENV RABBITMQ_EXCHANGE_NAME=<exchange_name>
+ENV RABBITMQ_ROUTING_KEY=<your_routing_key>
 
 # Run Entity Framework migrations and start the application
 ENTRYPOINT ["dotnet", "ClimateTrackr-Server.dll"]
