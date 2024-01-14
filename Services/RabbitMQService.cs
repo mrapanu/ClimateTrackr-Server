@@ -22,5 +22,15 @@ namespace ClimateTrackr_Server.Services
             var channel = connection.CreateConnection();
             return channel;
         }
+
+        string IRabbitMQService.GetExName()
+        {
+            return _configuration.ExchangeName;
+        }
+
+        string IRabbitMQService.GetRoutingKey()
+        {
+            return _configuration.RoutingKey;
+        }
     }
 }

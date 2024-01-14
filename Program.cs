@@ -6,11 +6,14 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Filters;
-var builder = WebApplication.CreateBuilder(args);
 
+
+//DotNetEnv.Env.Load($"{Directory.GetCurrentDirectory()}\\.env");
+
+var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<DataContext>(o =>
 {
-    o.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+    o.UseSqlServer(Environment.GetEnvironmentVariable("DB_CONN_STRING"));
 });
 
 builder.Services.AddControllers();
@@ -45,15 +48,35 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 //RabbitMQ
 
 builder.Services.Configure<RabbitMQConfig>(o =>
-
-    o.ConnectionUrl = "amqp://guest:guest@localhost:5672/"
-);
+{
+    o.ConnectionUrl = Environment.GetEnvironmentVariable("RABBITMQ_CONN_STRING");
+    o.RoutingKey = Environment.GetEnvironmentVariable("RABBITMQ_ROUTING_KEY");
+    o.ExchangeName = Environment.GetEnvironmentVariable("RABBITMQ_EXCHANGE_NAME");
+});
 builder.Services.AddSingleton<IRabbitMQService, RabbitMQService>();
 builder.Services.AddSingleton<IConsumerService, ConsumerService>();
 builder.Services.AddHostedService<ConsumerHostedService>();
 
 var app = builder.Build();
 
+using (var serviceScope = app.Services.GetRequiredService<IServiceScopeFactory>().CreateScope())
+{
+    var logger = serviceScope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    var db = serviceScope.ServiceProvider.GetRequiredService<DataContext>().Database;
+    if (!db.CanConnect())
+    {
+        try
+        {
+            db.EnsureCreated();
+            db.Migrate();
+            logger.LogInformation("Database created successfully.");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "An error occurred while creating the database.");
+        }
+    }
+}
 
 if (app.Environment.IsDevelopment())
 {

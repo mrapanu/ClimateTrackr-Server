@@ -15,8 +15,8 @@ namespace ClimateTrackr_Server.Services
             _connection = rabbitMqService.CreateChannel();
             _model = _connection.CreateModel();
             _model.QueueDeclare("climateTrackr", durable: true, exclusive: false, autoDelete: false);
-            _model.ExchangeDeclare("climateTrackr_ex", ExchangeType.Direct, durable: true, autoDelete: false);
-            _model.QueueBind("climateTrackr", "climateTrackr_ex", "climateTrackrKey");
+            _model.ExchangeDeclare(rabbitMqService.GetExName(), ExchangeType.Direct, durable: true, autoDelete: false);
+            _model.QueueBind("climateTrackr", rabbitMqService.GetExName(), rabbitMqService.GetRoutingKey());
             _serviceScopeFactory = serviceScopeFactory;
         }
         public async Task ReadMessgaes()
