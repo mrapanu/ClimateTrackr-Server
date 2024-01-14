@@ -8,12 +8,10 @@ namespace ClimateTrackr_Server.Data
     public class AuthRepository : IAuthRepository
     {
         private readonly DataContext _context;
-        private readonly IConfiguration _configuration;
 
-        public AuthRepository(DataContext context, IConfiguration configuration)
+        public AuthRepository(DataContext context)
         {
             _context = context;
-            _configuration = configuration;
         }
         public async Task<ServiceResponse<string>> Login(string username, string password)
         {
@@ -92,7 +90,7 @@ namespace ClimateTrackr_Server.Data
                 new Claim(ClaimTypes.Name, user.Username)
             };
 
-            var appSettingsToken = _configuration.GetSection("AppSettings:Token").Value;
+            var appSettingsToken = Environment.GetEnvironmentVariable("JWT_SECRET_TOKEN");
 
             if (appSettingsToken is null)
             {

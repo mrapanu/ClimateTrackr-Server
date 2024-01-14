@@ -9,7 +9,6 @@ using Swashbuckle.AspNetCore.Filters;
 
 
 //DotNetEnv.Env.Load($"{Directory.GetCurrentDirectory()}\\.env");
-
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<DataContext>(o =>
 {
@@ -39,7 +38,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         {
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.
-            GetBytes(builder.Configuration.GetSection("AppSettings:Token").Value!)),
+            GetBytes(Environment.GetEnvironmentVariable("JWT_SECRET_TOKEN"))),
             ValidateIssuer = false,
             ValidateAudience = false   //TO BE REVISED.
         };

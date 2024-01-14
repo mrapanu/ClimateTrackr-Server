@@ -28,6 +28,7 @@ ENV DB_CONN_STRING=<your_db_conn_string>
 ENV RABBITMQ_CONN_STRING=<Example:amqp://guest:guest@localhost:5672/>
 ENV RABBITMQ_EXCHANGE_NAME=<exchange_name>
 ENV RABBITMQ_ROUTING_KEY=<your_routing_key>
+ENV JWT_SECRET_TOKEN=<secret_token_min_16_chars>
 
 # Run Entity Framework migrations and start the application
 ENTRYPOINT ["dotnet", "ClimateTrackr-Server.dll"]
