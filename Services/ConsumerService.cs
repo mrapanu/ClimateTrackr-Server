@@ -30,7 +30,7 @@ namespace ClimateTrackr_Server.Services
                 using (var scope = _serviceScopeFactory.CreateScope())
                 {
                     var dbContext = scope.ServiceProvider.GetRequiredService<DataContext>();
-                    await WriteToDatabaseAsync(message, dbContext);
+                    await WriteToDatabaseAsync(message!, dbContext);
                 }
                 await Task.CompletedTask;
                 _model.BasicAck(ea.DeliveryTag, false);

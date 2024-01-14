@@ -38,7 +38,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         {
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.
-            GetBytes(Environment.GetEnvironmentVariable("JWT_SECRET_TOKEN"))),
+            GetBytes(Environment.GetEnvironmentVariable("JWT_SECRET_TOKEN")!)),
             ValidateIssuer = false,
             ValidateAudience = false   //TO BE REVISED.
         };
@@ -48,9 +48,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.Configure<RabbitMQConfig>(o =>
 {
-    o.ConnectionUrl = Environment.GetEnvironmentVariable("RABBITMQ_CONN_STRING");
-    o.RoutingKey = Environment.GetEnvironmentVariable("RABBITMQ_ROUTING_KEY");
-    o.ExchangeName = Environment.GetEnvironmentVariable("RABBITMQ_EXCHANGE_NAME");
+    o.ConnectionUrl = Environment.GetEnvironmentVariable("RABBITMQ_CONN_STRING")!;
+    o.RoutingKey = Environment.GetEnvironmentVariable("RABBITMQ_ROUTING_KEY")!;
+    o.ExchangeName = Environment.GetEnvironmentVariable("RABBITMQ_EXCHANGE_NAME")!;
 });
 builder.Services.AddSingleton<IRabbitMQService, RabbitMQService>();
 builder.Services.AddSingleton<IConsumerService, ConsumerService>();

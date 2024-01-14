@@ -90,7 +90,7 @@ namespace ClimateTrackr_Server.Data
                 new Claim(ClaimTypes.Name, user.Username)
             };
 
-            var appSettingsToken = Environment.GetEnvironmentVariable("JWT_SECRET_TOKEN");
+            var appSettingsToken = Environment.GetEnvironmentVariable("JWT_SECRET_TOKEN")!;
 
             if (appSettingsToken is null)
             {
