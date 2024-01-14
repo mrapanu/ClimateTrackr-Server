@@ -1,6 +1,3 @@
-
-using Microsoft.AspNetCore.Mvc;
-
 namespace ClimateTrackr_Server.Data
 {
     public interface IAuthRepository

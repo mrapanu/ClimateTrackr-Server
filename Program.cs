@@ -5,7 +5,6 @@ global using ClimateTrackr_Server.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using Swashbuckle.AspNetCore.SwaggerGen;
 using Swashbuckle.AspNetCore.Filters;
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,7 +18,8 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme{
+    c.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
+    {
         Description = """Standard Authorization header using the Bearer scheme. Example: "bearer {token}" """,
         In = ParameterLocation.Header,
         Name = "authorization",
@@ -42,6 +42,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+//RabbitMQ
+
+builder.Services.Configure<RabbitMQConfig>(o =>
+
+    o.ConnectionUrl = "amqp://guest:guest@localhost:5672/"
+);
+builder.Services.AddSingleton<IRabbitMQService, RabbitMQService>();
+builder.Services.AddSingleton<IConsumerService, ConsumerService>();
+builder.Services.AddHostedService<ConsumerHostedService>();
+
 var app = builder.Build();
 
 
@@ -58,5 +68,4 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
 app.Run();

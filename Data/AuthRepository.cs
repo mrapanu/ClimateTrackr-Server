@@ -4,7 +4,6 @@ using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
 
 namespace ClimateTrackr_Server.Data
-
 {
     public class AuthRepository : IAuthRepository
     {

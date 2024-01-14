@@ -1,4 +1,3 @@
-
 namespace ClimateTrackr_Server.Models
 {
     public class TempAndHum

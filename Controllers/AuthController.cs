@@ -1,4 +1,3 @@
-using Azure.Identity;
 using ClimateTrackr_Server.Dtos;
 using Microsoft.AspNetCore.Mvc;
 
