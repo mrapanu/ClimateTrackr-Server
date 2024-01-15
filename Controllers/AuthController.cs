@@ -34,5 +34,17 @@ namespace ClimateTrackr_Server.Controllers
             }
             return Ok(response);
         }
+
+        [HttpPost("ResetPassword")]
+        public async Task<ActionResult<ServiceResponse<int>>> ResetPassword(UserResetDto request)
+        {
+
+            var response = await _authRepo.ResetPassword(request.Username,request.NewPassword,request.OldPassword);
+            if(!response.Success)
+            {
+                return BadRequest(response);
+            }
+            return Ok(response);
+        }
     }
 }

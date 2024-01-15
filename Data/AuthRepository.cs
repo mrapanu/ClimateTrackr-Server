@@ -109,8 +109,34 @@ namespace ClimateTrackr_Server.Data
 
             JwtSecurityTokenHandler tokenHandler = new JwtSecurityTokenHandler();
             SecurityToken token = tokenHandler.CreateToken(tokenDescriptor);
-        
+
             return tokenHandler.WriteToken(token);
+        }
+
+        public async Task<ServiceResponse<string>> ResetPassword(string username, string newpassword, string oldpassword)
+        {
+            var response = new ServiceResponse<string>();
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username.ToLower().Equals(username.ToLower()));
+            if (user is null)
+            {
+                response.Success = false;
+                response.Message = $"Can't reset the password for {username}";
+            }
+            else if (!VerifyPasswordHash(oldpassword, user.PasswordHash, user.PasswordSalt))
+            {
+                response.Success = false;
+                response.Message = "The old password is wrong!";
+            }
+            else
+            {
+                CreatePasswordHash(newpassword, out byte[] passwordHash, out byte[] passwordSalt);
+                user.PasswordHash = passwordHash;
+                user.PasswordSalt = passwordSalt;
+                await _context.SaveChangesAsync();
+                response.Data = CreateToken(user);
+                response.Message = "Password reset successfully!";
+            }
+            return response;
         }
     }
 }
