@@ -87,7 +87,8 @@ namespace ClimateTrackr_Server.Data
         {
             var claims = new List<Claim>{
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.Username)
+                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.Role, user.Usertype.ToString())
             };
 
             var appSettingsToken = Environment.GetEnvironmentVariable("JWT_SECRET_TOKEN")!;
@@ -152,7 +153,7 @@ namespace ClimateTrackr_Server.Data
             {
                 _context.Users.Remove(user);
                 await _context.SaveChangesAsync();
-                response.Data = user.Id; 
+                response.Data = user.Id;
                 response.Message = $"User {username} has been deleted.";
             }
             return response;
