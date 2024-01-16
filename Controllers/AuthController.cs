@@ -1,4 +1,5 @@
 using ClimateTrackr_Server.Dtos;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ClimateTrackr_Server.Controllers
@@ -14,8 +15,9 @@ namespace ClimateTrackr_Server.Controllers
             _authRepo = authRepo;
         }
 
-        [HttpPost("Register")]
-        public async Task<ActionResult<ServiceResponse<int>>> Register(UserRegisterDto request)
+        [Authorize(Roles = "Admin")]
+        [HttpPost("AddUser")]
+        public async Task<ActionResult<ServiceResponse<int>>> AddUser(UserRegisterDto request)
         {
             var response = await _authRepo.Register(new Models.User {Username = request.Username}, request.Password);
             if(!response.Success)
@@ -24,6 +26,7 @@ namespace ClimateTrackr_Server.Controllers
             }
             return Ok(response);
         }
+
         [HttpPost("Login")]
         public async Task<ActionResult<ServiceResponse<int>>> Login(UserLoginDto request)
         {
@@ -34,7 +37,7 @@ namespace ClimateTrackr_Server.Controllers
             }
             return Ok(response);
         }
-
+        
         [HttpPost("ResetPassword")]
         public async Task<ActionResult<ServiceResponse<string>>> ResetPassword(UserResetDto request)
         {
@@ -47,7 +50,7 @@ namespace ClimateTrackr_Server.Controllers
             return Ok(response);
         }
 
-        
+        [Authorize(Roles = "Admin")]
         [HttpDelete("DeleteUser")]
         public async Task<ActionResult<ServiceResponse<int>>> DeleteUser(string username)
         {
