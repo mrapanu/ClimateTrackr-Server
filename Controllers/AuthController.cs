@@ -36,10 +36,23 @@ namespace ClimateTrackr_Server.Controllers
         }
 
         [HttpPost("ResetPassword")]
-        public async Task<ActionResult<ServiceResponse<int>>> ResetPassword(UserResetDto request)
+        public async Task<ActionResult<ServiceResponse<string>>> ResetPassword(UserResetDto request)
         {
 
             var response = await _authRepo.ResetPassword(request.Username,request.NewPassword,request.OldPassword);
+            if(!response.Success)
+            {
+                return BadRequest(response);
+            }
+            return Ok(response);
+        }
+
+        
+        [HttpDelete("DeleteUser")]
+        public async Task<ActionResult<ServiceResponse<int>>> DeleteUser(string username)
+        {
+
+            var response = await _authRepo.DeleteUser(username);
             if(!response.Success)
             {
                 return BadRequest(response);

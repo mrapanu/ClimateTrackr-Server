@@ -138,5 +138,24 @@ namespace ClimateTrackr_Server.Data
             }
             return response;
         }
+
+        public async Task<ServiceResponse<int>> DeleteUser(string username)
+        {
+            var response = new ServiceResponse<int>();
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username.ToLower().Equals(username.ToLower()));
+            if (user is null)
+            {
+                response.Success = false;
+                response.Message = $"Can't delete the {username} user.";
+            }
+            else
+            {
+                _context.Users.Remove(user);
+                await _context.SaveChangesAsync();
+                response.Data = user.Id; 
+                response.Message = $"User {username} has been deleted.";
+            }
+            return response;
+        }
     }
 }
