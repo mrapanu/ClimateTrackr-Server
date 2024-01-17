@@ -1,6 +1,8 @@
 
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using ClimateTrackr_Server.Dtos;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.IdentityModel.Tokens;
 
 namespace ClimateTrackr_Server.Data
@@ -157,6 +159,38 @@ namespace ClimateTrackr_Server.Data
                 response.Message = $"User {username} has been deleted.";
             }
             return response;
+        }
+
+        public async Task<ServiceResponse<List<GetUserDto>>> GetUsers()
+        {
+            var response = new ServiceResponse<List<GetUserDto>>();
+
+            var users = await _context.Users.ToListAsync();
+            var userDtos = new List<GetUserDto>();
+
+            if (users.Count() != 0)
+            {
+                foreach (var user in users)
+                {
+                    userDtos.Add(new GetUserDto
+                    {
+                        Id = user.Id,
+                        Username = user.Username,
+                        Role = user.Usertype
+                    });
+                }
+                response.Data = userDtos;
+                response.Success = true;
+                response.Message = "Get users was successfully executed.";
+            }
+            else
+            {
+                response.Success = false;
+                response.Message = "There is no user in the table.";
+            }
+
+            return response;
+
         }
     }
 }

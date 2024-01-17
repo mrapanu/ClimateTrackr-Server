@@ -1,3 +1,5 @@
+using ClimateTrackr_Server.Dtos;
+
 namespace ClimateTrackr_Server.Data
 {
     public interface IAuthRepository
@@ -7,5 +9,6 @@ namespace ClimateTrackr_Server.Data
         Task<bool> UserExists(string username);
         Task<ServiceResponse<string>> ResetPassword(string username, string newpassword, string oldpassword);
         Task<ServiceResponse<int>> DeleteUser(string username);
+        Task<ServiceResponse<List<GetUserDto>>> GetUsers();
     }
 }
