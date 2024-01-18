@@ -33,7 +33,7 @@ namespace ClimateTrackr_Server.Controllers
             var response = await _authRepo.Login(request.Username, request.Password);
             if (!response.Success)
             {
-                return BadRequest(response);
+                return Unauthorized(response);
             }
             return Ok(response);
         }
