@@ -6,7 +6,6 @@ namespace ClimateTrackr_Server.Models
         public string Username { get; set; } = string.Empty;
         public byte[] PasswordHash { get; set; } = new byte[0];
         public byte[] PasswordSalt { get; set; } = new byte[0];
-        public List<TempAndHum>? TempAndHums { get; set; }
         public UserType Usertype { get; set; } = UserType.Normal;
     }
 }

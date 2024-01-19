@@ -8,5 +8,6 @@ namespace ClimateTrackr_Server.Data
         }
         public DbSet<TempAndHum> TempAndHums => Set<TempAndHum>();
         public DbSet<User> Users => Set<User>();
+        public DbSet<RoomConfig> RoomConfigs => Set<RoomConfig>();
     }
 }
