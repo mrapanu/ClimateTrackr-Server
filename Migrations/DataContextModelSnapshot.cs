@@ -22,6 +22,26 @@ namespace ClimateTrackr_Server.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("ClimateTrackr_Server.Models.RoomConfig", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("RoomName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Window")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("RoomConfigs");
+                });
+
             modelBuilder.Entity("ClimateTrackr_Server.Models.TempAndHum", b =>
                 {
                     b.Property<int>("Id")
@@ -43,12 +63,7 @@ namespace ClimateTrackr_Server.Migrations
                     b.Property<double>("Temperature")
                         .HasColumnType("float");
 
-                    b.Property<int?>("UserId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("TempAndHums");
                 });
@@ -79,18 +94,6 @@ namespace ClimateTrackr_Server.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
-                });
-
-            modelBuilder.Entity("ClimateTrackr_Server.Models.TempAndHum", b =>
-                {
-                    b.HasOne("ClimateTrackr_Server.Models.User", null)
-                        .WithMany("TempAndHums")
-                        .HasForeignKey("UserId");
-                });
-
-            modelBuilder.Entity("ClimateTrackr_Server.Models.User", b =>
-                {
-                    b.Navigation("TempAndHums");
                 });
 #pragma warning restore 612, 618
         }
