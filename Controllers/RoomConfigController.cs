@@ -63,7 +63,56 @@ namespace ClimateTrackr_Server.Controllers
             response.Success = true;
             return Ok(response);
         }
+        
+        [Authorize(Roles = "Admin")]
+        [HttpDelete("DeleteRoom")]
+        public async Task<ActionResult<ServiceResponse<IEnumerable<RoomConfig>>>> DeleteRoom(int roomId)
+        {
+            var response = new ServiceResponse<IEnumerable<RoomConfig>>();
 
+            var roomToDelete = await _context.RoomConfigs.FindAsync(roomId);
+
+            if (roomToDelete == null)
+            {
+                response.Message = $"Room with ID {roomId} not found.";
+                response.Success = false;
+                return Ok(response);
+            }
+
+            _context.RoomConfigs.Remove(roomToDelete);
+            await _context.SaveChangesAsync();
+
+            response.Data = await _context.RoomConfigs.Where(w => w.Window == roomToDelete.Window).ToListAsync();
+            response.Message = $"Successfully deleted room with ID {roomId}";
+            response.Success = true;
+            return Ok(response);
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPut("RenameRoom")]
+        public async Task<ActionResult<ServiceResponse<RoomConfig>>> RenameRoom(RenameRoomDto room)
+        {
+            var response = new ServiceResponse<RoomConfig>();
+
+            var roomToUpdate = await _context.RoomConfigs.FindAsync(room.Id);
+
+            if (roomToUpdate == null)
+            {
+                response.Message = $"Room with ID {room.Id} not found.";
+                response.Success = false;
+                return Ok(response);
+            }
+
+            roomToUpdate.RoomName = room.Name;
+
+            _context.RoomConfigs.Update(roomToUpdate);
+            await _context.SaveChangesAsync();
+
+            response.Data = await _context.RoomConfigs.FindAsync(room.Id);
+            response.Message = $"Successfully updated room with ID {room.Id}";
+            response.Success = true;
+            return Ok(response);
+        }
 
     }
 }
