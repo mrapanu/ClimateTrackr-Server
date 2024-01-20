@@ -16,7 +16,7 @@ namespace ClimateTrackr_Server.Controllers
             _context = context;
         }
 
-        [HttpGet("getbyroom")]
+        [HttpGet("GetByRoom")]
         public async Task<ActionResult<ServiceResponse<IEnumerable<TempAndHum>>>> GetByRoom(string room)
         {
             var response = new ServiceResponse<IEnumerable<TempAndHum>>();
@@ -52,8 +52,8 @@ namespace ClimateTrackr_Server.Controllers
         }
 
 
-        [HttpGet("getbydate")]
-        public async Task<ActionResult<ServiceResponse<IEnumerable<TempAndHum>>>> GetByDate(DateTime start, DateTime end, string room)
+        [HttpGet("GetByDate")]
+        public async Task<ActionResult<ServiceResponse<IEnumerable<TempAndHum>>>> GetByDate(DateTime timeStart, DateTime timeEnd, string room)
         {
             var response = new ServiceResponse<IEnumerable<TempAndHum>>();
             //var cacheId = _redisCacheService.Get<IEnumerable<TempAndHum>>($"{start}:{end}:{room}");
@@ -67,8 +67,8 @@ namespace ClimateTrackr_Server.Controllers
             // {
             response.Data =
             await _context.TempAndHums.Where(entries =>
-            start <= entries.Date
-            && entries.Date <= end && entries.Room == room).ToListAsync();
+            timeStart <= entries.Date
+            && entries.Date <= timeEnd && entries.Room == room).ToListAsync();
             //_redisCacheService.Set($"{start}:{end}:{room}", tempAndHumByDates);
             if (response.Data.Count() == 0)
             {
