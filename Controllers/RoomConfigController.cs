@@ -31,6 +31,27 @@ namespace ClimateTrackr_Server.Controllers
         }
 
         [Authorize(Roles = "Admin")]
+        [HttpGet("GetRoomsFromWindow")]
+        public async Task<ActionResult<ServiceResponse<IEnumerable<RoomConfig>>>> GetRoomsFromWindow(Window window)
+        {
+            var response = new ServiceResponse<IEnumerable<RoomConfig>>();
+            response.Data = await _context.RoomConfigs.Where(r => r.Window == window).ToListAsync();
+            if (!Enum.IsDefined(typeof(Window), window))
+            {
+                response.Message = "Window not exist!";
+                response.Success = false;
+                return response;
+            }
+            if (response.Data.Count() == 0)
+            {
+                response.Message = "There is no room configured in this window!";
+                response.Success = true;
+                return Ok(response);
+            }
+            return Ok(response);
+        }
+
+        [Authorize(Roles = "Admin")]
         [HttpPost("AddRoom")]
         public async Task<ActionResult<ServiceResponse<IEnumerable<RoomConfig>>>> AddRoom(AddRoomDto room)
         {
@@ -63,7 +84,7 @@ namespace ClimateTrackr_Server.Controllers
             response.Success = true;
             return Ok(response);
         }
-        
+
         [Authorize(Roles = "Admin")]
         [HttpDelete("DeleteRoom")]
         public async Task<ActionResult<ServiceResponse<IEnumerable<RoomConfig>>>> DeleteRoom(int roomId)
