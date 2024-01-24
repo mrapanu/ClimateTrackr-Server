@@ -106,7 +106,7 @@ namespace ClimateTrackr_Server.Data
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.Now.AddDays(1),
+                Expires = DateTime.Now.AddHours(12),
                 SigningCredentials = creds
             };
 
