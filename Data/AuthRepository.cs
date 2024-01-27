@@ -38,7 +38,7 @@ namespace ClimateTrackr_Server.Data
             return response;
         }
 
-        public async Task<ServiceResponse<int>> Register(User user, string password)
+        public async Task<ServiceResponse<int>> AddUser(User user, string password)
         {
             var response = new ServiceResponse<int>();
 
@@ -191,6 +191,46 @@ namespace ClimateTrackr_Server.Data
 
             return response;
 
+        }
+
+        public async Task<ServiceResponse<string>> ChangePassword(string username, string password)
+        {
+            var response = new ServiceResponse<string>();
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username.ToLower().Equals(username.ToLower()));
+            if (user is null)
+            {
+                response.Success = false;
+                response.Message = $"Can't change the password for {username}";
+            }
+            else
+            {
+                CreatePasswordHash(password, out byte[] passwordHash, out byte[] passwordSalt);
+                user.PasswordHash = passwordHash;
+                user.PasswordSalt = passwordSalt;
+                await _context.SaveChangesAsync();
+                response.Data = user.Username;
+                response.Message = "Password changed successfully!";
+            }
+            return response;
+        }
+
+        public async Task<ServiceResponse<string>> ChangeRole(string username, UserType role)
+        {
+            var response = new ServiceResponse<string>();
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username.ToLower().Equals(username.ToLower()));
+            if (user is null)
+            {
+                response.Success = false;
+                response.Message = $"Can't change the role for {username}";
+            }
+            else
+            {
+                user.Usertype = role;
+                await _context.SaveChangesAsync();
+                response.Data = user.Username;
+                response.Message = "Role changed successfully!";
+            }
+            return response;
         }
     }
 }

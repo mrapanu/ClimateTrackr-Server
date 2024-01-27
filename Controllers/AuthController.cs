@@ -19,7 +19,7 @@ namespace ClimateTrackr_Server.Controllers
         [HttpPost("AddUser")]
         public async Task<ActionResult<ServiceResponse<int>>> AddUser(UserRegisterDto request)
         {
-            var response = await _authRepo.Register(new Models.User { Username = request.Username }, request.Password);
+            var response = await _authRepo.AddUser(new Models.User { Username = request.Username, Usertype = request.UserType }, request.Password);
             if (!response.Success)
             {
                 return BadRequest(response);
@@ -43,6 +43,32 @@ namespace ClimateTrackr_Server.Controllers
         {
 
             var response = await _authRepo.ResetPassword(request.Username, request.NewPassword, request.OldPassword);
+            if (!response.Success)
+            {
+                return BadRequest(response);
+            }
+            return Ok(response);
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPost("ChangePassword")]
+        public async Task<ActionResult<ServiceResponse<string>>> ChangePassword(ChangePasswordDto request)
+        {
+
+            var response = await _authRepo.ChangePassword(request.Username, request.NewPassword);
+            if (!response.Success)
+            {
+                return BadRequest(response);
+            }
+            return Ok(response);
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPost("ChangeRole")]
+        public async Task<ActionResult<ServiceResponse<string>>> ChangeRole(ChangeRoleDto request)
+        {
+
+            var response = await _authRepo.ChangeRole(request.Username, request.Role);
             if (!response.Success)
             {
                 return BadRequest(response);
