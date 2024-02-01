@@ -18,7 +18,7 @@ namespace ClimateTrackr_Server.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpPost("AddUser")]
-        public async Task<ActionResult<ServiceResponse<int>>> AddUser(UserRegisterDto request)
+        public async Task<ActionResult<ServiceResponse<int>>> AddUser(AddUserDto request)
         {
             var response = await _authRepo.AddUser(new Models.User { Username = request.Username, Usertype = request.UserType }, request.Password);
             if (!response.Success)
@@ -41,7 +41,7 @@ namespace ClimateTrackr_Server.Controllers
 
         [Authorize]
         [HttpPost("ResetPassword")]
-        public async Task<ActionResult<ServiceResponse<string>>> ResetPassword(UserResetDto request)
+        public async Task<ActionResult<ServiceResponse<string>>> ResetPassword(UserResetPasswordDto request)
         {
 
             var response = await _authRepo.ResetPassword(request.Username, request.NewPassword, request.OldPassword);
