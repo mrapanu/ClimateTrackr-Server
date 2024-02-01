@@ -10,6 +10,8 @@ namespace ClimateTrackr_Server.Data
         Task<ServiceResponse<string>> ResetPassword(string username, string newpassword, string oldpassword);
         Task<ServiceResponse<string>> ChangePassword(string username, string password);
         Task<ServiceResponse<string>> ChangeRole(string username, UserType role);
+        Task<ServiceResponse<UpdateUserProfileDto>> UpdateProfile(string username, string email, string fullName);
+        Task<ServiceResponse<GetProfileDto>> GetProfile(string username);
         Task<ServiceResponse<int>> DeleteUser(string username);
         Task<ServiceResponse<List<GetUserDto>>> GetUsers();
     }

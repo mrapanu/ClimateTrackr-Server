@@ -232,5 +232,51 @@ namespace ClimateTrackr_Server.Data
             }
             return response;
         }
+
+        public async Task<ServiceResponse<UpdateUserProfileDto>> UpdateProfile(string username, string email, string fullName)
+        {
+            var response = new ServiceResponse<UpdateUserProfileDto>();
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username.ToLower().Equals(username.ToLower()));
+            if (user is null)
+            {
+                response.Success = false;
+                response.Message = "Can't update the profile!";
+            }
+            else
+            {
+                if (!email.IsNullOrEmpty())
+                {
+                    user.Email = email;
+                }
+                if (!fullName.IsNullOrEmpty())
+                {
+                    user.FullName = fullName;
+                }
+                _context.Users.Update(user);
+                await _context.SaveChangesAsync();
+                var responseData = new UpdateUserProfileDto { Username = user.Username, FullName = user.FullName, Email = user.Email };
+                response.Data = responseData;
+                response.Message = "Profile updated successfully!";
+            }
+            return response;
+        }
+
+        public async Task<ServiceResponse<GetProfileDto>> GetProfile(string username)
+        {
+            var response = new ServiceResponse<GetProfileDto>();
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username.ToLower().Equals(username.ToLower()));
+            if (user is null)
+            {
+                response.Success = false;
+                response.Message = "User not exist!";
+            }
+            else
+            {
+                var responseData = new GetProfileDto { FullName = user.FullName, Email = user.Email, Username = user.Username };
+                response.Data = responseData;
+                response.Message = "Successfully received data for user.";
+            }
+            return response;
+        }
     }
 }

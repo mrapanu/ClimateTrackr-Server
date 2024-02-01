@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using ClimateTrackr_Server.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -38,6 +39,7 @@ namespace ClimateTrackr_Server.Controllers
             return Ok(response);
         }
 
+        [Authorize]
         [HttpPost("ResetPassword")]
         public async Task<ActionResult<ServiceResponse<string>>> ResetPassword(UserResetDto request)
         {
@@ -89,11 +91,33 @@ namespace ClimateTrackr_Server.Controllers
             return Ok(response);
         }
 
+        [Authorize]
+        [HttpPut("UpdateProfile")]
+        public async Task<ActionResult<ServiceResponse<string>>> UpdateProfile(UpdateUserProfileDto request)
+        {
+            var username = User.FindFirst(ClaimTypes.Name)?.Value;
+            var response = await _authRepo.UpdateProfile(username!, request.Email, request.FullName);
+            if (!response.Success)
+            {
+                return BadRequest(response);
+            }
+            return Ok(response);
+        }
+
         [Authorize(Roles = "Admin")]
         [HttpGet("GetUsers")]
         public async Task<ActionResult<ServiceResponse<IEnumerable<GetUserDto>>>> GetUsers()
         {
             var response = await _authRepo.GetUsers();
+            return Ok(response);
+        }
+
+        [Authorize]
+        [HttpGet("GetProfileInfo")]
+        public async Task<ActionResult<ServiceResponse<GetProfileDto>>> GetProfileInfo()
+        {
+            var username = User.FindFirst(ClaimTypes.Name)?.Value;
+            var response = await _authRepo.GetProfile(username!);
             return Ok(response);
         }
     }
