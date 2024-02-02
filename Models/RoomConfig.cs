@@ -4,7 +4,8 @@ namespace ClimateTrackr_Server.Models
     {
         public int Id { get; set; }
         public string RoomName { get; set; } = string.Empty;
-        public Window  Window { get; set; } 
+        public Window Window { get; set; }
+        public ICollection<UserRoom> UserRoomConfigs { get; set; } = new List<UserRoom>();
     }
 
     public enum Window

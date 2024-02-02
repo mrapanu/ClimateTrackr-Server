@@ -9,5 +9,7 @@ namespace ClimateTrackr_Server.Models
         public string Email { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;
         public UserType Usertype { get; set; } = UserType.Normal;
+        public bool EnableNotifications { get; set; } = false;
+        public NotificationSettings NotificationSettings { get; set; } = new NotificationSettings();
     }
 }
