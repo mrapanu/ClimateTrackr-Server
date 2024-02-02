@@ -1,6 +1,7 @@
 
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text.RegularExpressions;
 using ClimateTrackr_Server.Dtos;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.IdentityModel.Tokens;
@@ -153,6 +154,12 @@ namespace ClimateTrackr_Server.Data
             }
             else
             {
+                var nsUpdate = await _context.NotificationSettings.FirstOrDefaultAsync(ns => ns.UserId == user.Id);
+                var userRoomsToRemove = _context.NotificationSettings.
+                Where(ns => ns.UserId == user.Id).SelectMany(userroom => userroom.SelectedRoomNames);
+                _context.UserRooms.RemoveRange(userRoomsToRemove);
+                _context.NotificationSettings.Remove(nsUpdate!);
+                await _context.SaveChangesAsync();
                 _context.Users.Remove(user);
                 await _context.SaveChangesAsync();
                 response.Data = user.Id;
@@ -261,6 +268,35 @@ namespace ClimateTrackr_Server.Data
             return response;
         }
 
+        public async Task<ServiceResponse<GetProfileDto>> SetNotifications(string username, bool setNotifications)
+        {
+            var response = new ServiceResponse<GetProfileDto>();
+            string emailPattern = @"^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$";
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username.ToLower().Equals(username.ToLower()));
+            if (setNotifications == true && !Regex.IsMatch(user!.Email, emailPattern))
+            {
+                response.Message = "You must set a valid email address for your user!";
+                response.Success = false;
+                return response;
+            }
+            if (user is null)
+            {
+                response.Success = false;
+                response.Message = "Can't update the notifications!";
+            }
+
+            else
+            {
+                user.EnableNotifications = setNotifications;
+                _context.Users.Update(user);
+                await _context.SaveChangesAsync();
+                var responseData = new GetProfileDto { Username = user.Username, FullName = user.FullName, Email = user.Email, EnableNotifications = user.EnableNotifications };
+                response.Data = responseData;
+                response.Message = "Notifications updated successfully!";
+            }
+            return response;
+        }
+
         public async Task<ServiceResponse<GetProfileDto>> GetProfile(string username)
         {
             var response = new ServiceResponse<GetProfileDto>();
@@ -272,7 +308,7 @@ namespace ClimateTrackr_Server.Data
             }
             else
             {
-                var responseData = new GetProfileDto { FullName = user.FullName, Email = user.Email, Username = user.Username };
+                var responseData = new GetProfileDto { FullName = user.FullName, Email = user.Email, Username = user.Username, EnableNotifications = user.EnableNotifications };
                 response.Data = responseData;
                 response.Message = "Successfully received data for user.";
             }

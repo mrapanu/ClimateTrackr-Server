@@ -14,5 +14,6 @@ namespace ClimateTrackr_Server.Data
         Task<ServiceResponse<GetProfileDto>> GetProfile(string username);
         Task<ServiceResponse<int>> DeleteUser(string username);
         Task<ServiceResponse<List<GetUserDto>>> GetUsers();
+        Task<ServiceResponse<GetProfileDto>> SetNotifications(string username, bool setNotifications);
     }
 }

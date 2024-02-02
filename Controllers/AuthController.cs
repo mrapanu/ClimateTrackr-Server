@@ -120,5 +120,18 @@ namespace ClimateTrackr_Server.Controllers
             var response = await _authRepo.GetProfile(username!);
             return Ok(response);
         }
+
+        [Authorize]
+        [HttpPut("UpdateEnableNotifications")]
+        public async Task<ActionResult<ServiceResponse<string>>> UpdateEnableNotifications(bool enableNotifications)
+        {
+            var username = User.FindFirst(ClaimTypes.Name)?.Value;
+            var response = await _authRepo.SetNotifications(username!, enableNotifications);
+            if (!response.Success)
+            {
+                return BadRequest(response);
+            }
+            return Ok(response);
+        }
     }
 }
