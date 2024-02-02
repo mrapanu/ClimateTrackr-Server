@@ -22,6 +22,32 @@ namespace ClimateTrackr_Server.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("ClimateTrackr_Server.Models.NotificationSettings", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Frequency")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserEmail")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("NotificationSettings");
+                });
+
             modelBuilder.Entity("ClimateTrackr_Server.Models.RoomConfig", b =>
                 {
                     b.Property<int>("Id")
@@ -80,6 +106,9 @@ namespace ClimateTrackr_Server.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("EnableNotifications")
+                        .HasColumnType("bit");
+
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -102,6 +131,72 @@ namespace ClimateTrackr_Server.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("ClimateTrackr_Server.Models.UserRoom", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("NotificationSettingsId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RoomConfigId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RoomName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NotificationSettingsId");
+
+                    b.HasIndex("RoomConfigId");
+
+                    b.ToTable("UserRooms");
+                });
+
+            modelBuilder.Entity("ClimateTrackr_Server.Models.NotificationSettings", b =>
+                {
+                    b.HasOne("ClimateTrackr_Server.Models.User", "User")
+                        .WithOne("NotificationSettings")
+                        .HasForeignKey("ClimateTrackr_Server.Models.NotificationSettings", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ClimateTrackr_Server.Models.UserRoom", b =>
+                {
+                    b.HasOne("ClimateTrackr_Server.Models.NotificationSettings", null)
+                        .WithMany("SelectedRoomNames")
+                        .HasForeignKey("NotificationSettingsId");
+
+                    b.HasOne("ClimateTrackr_Server.Models.RoomConfig", null)
+                        .WithMany("UserRoomConfigs")
+                        .HasForeignKey("RoomConfigId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ClimateTrackr_Server.Models.NotificationSettings", b =>
+                {
+                    b.Navigation("SelectedRoomNames");
+                });
+
+            modelBuilder.Entity("ClimateTrackr_Server.Models.RoomConfig", b =>
+                {
+                    b.Navigation("UserRoomConfigs");
+                });
+
+            modelBuilder.Entity("ClimateTrackr_Server.Models.User", b =>
+                {
+                    b.Navigation("NotificationSettings")
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }
