@@ -3,7 +3,6 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text.RegularExpressions;
 using ClimateTrackr_Server.Dtos;
-using Microsoft.AspNetCore.Http.Features;
 using Microsoft.IdentityModel.Tokens;
 
 namespace ClimateTrackr_Server.Data
@@ -240,9 +239,9 @@ namespace ClimateTrackr_Server.Data
             return response;
         }
 
-        public async Task<ServiceResponse<UpdateUserProfileDto>> UpdateProfile(string username, string email, string fullName)
+        public async Task<ServiceResponse<GetProfileDto>> UpdateProfile(string username, string email, string fullName)
         {
-            var response = new ServiceResponse<UpdateUserProfileDto>();
+            var response = new ServiceResponse<GetProfileDto>();
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Username.ToLower().Equals(username.ToLower()));
             if (user is null)
             {
@@ -259,9 +258,16 @@ namespace ClimateTrackr_Server.Data
                 {
                     user.FullName = fullName;
                 }
+                user.EnableNotifications = false;
                 _context.Users.Update(user);
                 await _context.SaveChangesAsync();
-                var responseData = new UpdateUserProfileDto { Username = user.Username, FullName = user.FullName, Email = user.Email };
+                var responseData = new GetProfileDto
+                {
+                    Username = user.Username,
+                    FullName = user.FullName,
+                    Email = user.Email,
+                    EnableNotifications = user.EnableNotifications
+                };
                 response.Data = responseData;
                 response.Message = "Profile updated successfully!";
             }
@@ -287,10 +293,22 @@ namespace ClimateTrackr_Server.Data
 
             else
             {
+                var userRooms = _context.NotificationSettings.Where(ns => ns.UserId == user.Id)
+                .SelectMany(userroom => userroom.SelectedRoomNames);
+                var notifSettings = await _context.NotificationSettings.FirstOrDefaultAsync(ns => ns.UserId == user.Id);
                 user.EnableNotifications = setNotifications;
                 _context.Users.Update(user);
                 await _context.SaveChangesAsync();
-                var responseData = new GetProfileDto { Username = user.Username, FullName = user.FullName, Email = user.Email, EnableNotifications = user.EnableNotifications };
+                var responseData = new GetProfileDto
+                {
+                    UserId = user.Id,
+                    Username = user.Username,
+                    FullName = user.FullName,
+                    Email = user.Email,
+                    EnableNotifications = user.EnableNotifications,
+                    SelectedRoomNames = userRooms.ToList(),
+                    Frequency = notifSettings!.Frequency,
+                };
                 response.Data = responseData;
                 response.Message = "Notifications updated successfully!";
             }
@@ -301,6 +319,7 @@ namespace ClimateTrackr_Server.Data
         {
             var response = new ServiceResponse<GetProfileDto>();
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Username.ToLower().Equals(username.ToLower()));
+
             if (user is null)
             {
                 response.Success = false;
@@ -308,7 +327,19 @@ namespace ClimateTrackr_Server.Data
             }
             else
             {
-                var responseData = new GetProfileDto { FullName = user.FullName, Email = user.Email, Username = user.Username, EnableNotifications = user.EnableNotifications };
+                var userRooms = _context.NotificationSettings.Where(ns => ns.UserId == user.Id)
+                .SelectMany(userroom => userroom.SelectedRoomNames);
+                var notifSettings = await _context.NotificationSettings.FirstOrDefaultAsync(ns => ns.UserId == user.Id);
+                var responseData = new GetProfileDto
+                {
+                    UserId = user.Id,
+                    Username = user.Username,
+                    FullName = user.FullName,
+                    Email = user.Email,
+                    EnableNotifications = user.EnableNotifications,
+                    SelectedRoomNames = userRooms.ToList(),
+                    Frequency = notifSettings!.Frequency
+                };
                 response.Data = responseData;
                 response.Message = "Successfully received data for user.";
             }
