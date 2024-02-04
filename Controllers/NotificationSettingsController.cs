@@ -18,10 +18,11 @@ namespace ClimateTrackr_Server.Controllers
 
         [Authorize]
         [HttpPost("AddNotificationSettings")]
-        public async Task<ActionResult<ServiceResponse<int>>> AddNotificationSettings(AddNotificationSettingsDto request)
+        public async Task<ActionResult<ServiceResponse<GetProfileDto>>> AddNotificationSettings(AddNotificationSettingsDto request)
         {
             string emailPattern = @"^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$";
-            var response = new ServiceResponse<int>();
+            var response = new ServiceResponse<GetProfileDto>();
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.UserId);
             if (!Regex.IsMatch(request.UserEmail, emailPattern))
             {
                 response.Message = "You must set a valid email address for your user!";
@@ -47,9 +48,22 @@ namespace ClimateTrackr_Server.Controllers
                 _context.UserRooms.RemoveRange(userRoomsToRemove);
                 _context.NotificationSettings.Update(nsUpdate);
                 await _context.SaveChangesAsync();
+                var userRooms = _context.NotificationSettings.Where(ns => ns.UserId == user!.Id)
+                .SelectMany(userroom => userroom.SelectedRoomNames);
+                var notifSettings = await _context.NotificationSettings.FirstOrDefaultAsync(ns => ns.UserId == user!.Id);
                 response.Success = true;
                 response.Message = "Notification Settings Updated!";
-                return Ok(response);
+                var responseData = new GetProfileDto
+                {
+                    UserId = user!.Id,
+                    Username = user.Username,
+                    FullName = user.FullName,
+                    Email = user.Email,
+                    EnableNotifications = user.EnableNotifications,
+                    SelectedRoomNames = userRooms.ToList(),
+                    Frequency = notifSettings!.Frequency,
+                };
+                response.Data = responseData;
             }
             else
             {
@@ -62,9 +76,23 @@ namespace ClimateTrackr_Server.Controllers
                 };
                 _context.NotificationSettings.Add(notificationSettings);
                 await _context.SaveChangesAsync();
+                var userRooms = _context.NotificationSettings.Where(ns => ns.UserId == user!.Id)
+                .SelectMany(userroom => userroom.SelectedRoomNames);
+                var notifSettings = await _context.NotificationSettings.FirstOrDefaultAsync(ns => ns.UserId == user!.Id);
                 response.Success = true;
                 response.Message = "Successfully set notification settings.";
-                response.Data = notificationSettings.Id;
+                var responseData = new GetProfileDto
+                {
+                    UserId = user!.Id,
+                    Username = user.Username,
+                    FullName = user.FullName,
+                    Email = user.Email,
+                    EnableNotifications = user.EnableNotifications,
+                    SelectedRoomNames = userRooms.ToList(),
+                    Frequency = notifSettings!.Frequency,
+                };
+                response.Data = responseData;
+                return Ok(response);
             }
             return Ok(response);
         }
