@@ -68,6 +68,48 @@ namespace ClimateTrackr_Server.Migrations
                     b.ToTable("RoomConfigs");
                 });
 
+            modelBuilder.Entity("ClimateTrackr_Server.Models.Smtp", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AuthOption")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ConnSecurity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Password")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SmtpEmail")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SmtpHelo")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("SmtpPort")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SmtpServer")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SmtpSettings");
+                });
+
             modelBuilder.Entity("ClimateTrackr_Server.Models.TempAndHum", b =>
                 {
                     b.Property<int>("Id")
