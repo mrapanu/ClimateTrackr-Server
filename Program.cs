@@ -8,7 +8,7 @@ using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Filters;
 
 
-DotNetEnv.Env.Load($"{Directory.GetCurrentDirectory()}\\.env");
+//DotNetEnv.Env.Load($"{Directory.GetCurrentDirectory()}\\.env");
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<DataContext>(o =>
 {
