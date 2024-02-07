@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using System.Net.Mail;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace ClimateTrackr_Server.Controllers
 {
@@ -22,6 +23,14 @@ namespace ClimateTrackr_Server.Controllers
         {
             var response = new ServiceResponse<GetSmtpSettingsDto>();
             var smtp = await _context.SmtpSettings.SingleOrDefaultAsync();
+            string emailPattern = @"^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$";
+
+            if (!Regex.IsMatch(request.SmtpEmail, emailPattern))
+            {
+                response.Message = $"{request.SmtpEmail} is not a valid email address!";
+                response.Success = false;
+                return Ok(response);
+            }
             if (!Enum.IsDefined(typeof(AuthenticationOption), request.AuthOption))
             {
                 response.Message = "Selected Authentication option doesn't exist.";
@@ -137,8 +146,15 @@ namespace ClimateTrackr_Server.Controllers
         [HttpPost("SendTestEmail")]
         public async Task<ActionResult<ServiceResponse<bool>>> SendTestEmail(TestEmailDto emailRequest)
         {
+            string emailPattern = @"^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$";
             var smtpSettings = await _context.SmtpSettings.SingleOrDefaultAsync();
             var response = new ServiceResponse<bool>();
+            if (!Regex.IsMatch(emailRequest.Recipient, emailPattern))
+            {
+                response.Message = $"{emailRequest.Recipient} is not a valid email address!";
+                response.Success = false;
+                return Ok(response);
+            }
             if (smtpSettings != null)
             {
 
