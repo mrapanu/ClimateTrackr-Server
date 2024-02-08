@@ -12,5 +12,6 @@ namespace ClimateTrackr_Server.Data
         public DbSet<NotificationSettings> NotificationSettings => Set<NotificationSettings>();
         public DbSet<UserRoom> UserRooms => Set<UserRoom>();
         public DbSet<Smtp> SmtpSettings => Set<Smtp>();
+        public DbSet<History> History => Set<History>();
     }
 }
