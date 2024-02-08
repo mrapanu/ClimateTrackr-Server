@@ -1,7 +1,9 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using ClimateTrackr_Server.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 
 namespace ClimateTrackr_Server.Controllers
 {
@@ -10,10 +12,12 @@ namespace ClimateTrackr_Server.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthRepository _authRepo;
+        private readonly DataContext _context;
 
-        public AuthController(IAuthRepository authRepo)
+        public AuthController(IAuthRepository authRepo, DataContext context)
         {
             _authRepo = authRepo;
+            _context = context;
         }
 
         [Authorize(Roles = "Admin")]
@@ -25,6 +29,14 @@ namespace ClimateTrackr_Server.Controllers
             {
                 return BadRequest(response);
             }
+            History hist = new History
+            {
+                DateTime = DateTime.Now,
+                User = User.FindFirst(ClaimTypes.Name)!.Value,
+                ActionMessage = $"Added new user '{request.Username}'."
+            };
+            _context.History.Add(hist);
+            await _context.SaveChangesAsync();
             return Ok(response);
         }
 
@@ -36,6 +48,14 @@ namespace ClimateTrackr_Server.Controllers
             {
                 return Unauthorized(response);
             }
+            History hist = new History
+            {
+                DateTime = DateTime.Now,
+                User = request.Username,
+                ActionMessage = "Logged in successfully!"
+            };
+            _context.History.Add(hist);
+            await _context.SaveChangesAsync();
             return Ok(response);
         }
 
@@ -49,6 +69,14 @@ namespace ClimateTrackr_Server.Controllers
             {
                 return BadRequest(response);
             }
+            History hist = new History
+            {
+                DateTime = DateTime.Now,
+                User = request.Username,
+                ActionMessage = "Reset password successfully!"
+            };
+            _context.History.Add(hist);
+            await _context.SaveChangesAsync();
             return Ok(response);
         }
 
@@ -62,6 +90,14 @@ namespace ClimateTrackr_Server.Controllers
             {
                 return BadRequest(response);
             }
+            History hist = new History
+            {
+                DateTime = DateTime.Now,
+                User = User.FindFirst(ClaimTypes.Name)!.Value,
+                ActionMessage = $"Changed password for '{request.Username}'."
+            };
+            _context.History.Add(hist);
+            await _context.SaveChangesAsync();
             return Ok(response);
         }
 
@@ -75,6 +111,14 @@ namespace ClimateTrackr_Server.Controllers
             {
                 return BadRequest(response);
             }
+            History hist = new History
+            {
+                DateTime = DateTime.Now,
+                User = User.FindFirst(ClaimTypes.Name)!.Value,
+                ActionMessage = $"Changed the role to '{request.Role.ToString()}' for '{request.Username}'."
+            };
+            _context.History.Add(hist);
+            await _context.SaveChangesAsync();
             return Ok(response);
         }
 
@@ -88,6 +132,14 @@ namespace ClimateTrackr_Server.Controllers
             {
                 return BadRequest(response);
             }
+            History hist = new History
+            {
+                DateTime = DateTime.Now,
+                User = User.FindFirst(ClaimTypes.Name)!.Value,
+                ActionMessage = $"Deleted user '{username}'."
+            };
+            _context.History.Add(hist);
+            await _context.SaveChangesAsync();
             return Ok(response);
         }
 
@@ -101,6 +153,14 @@ namespace ClimateTrackr_Server.Controllers
             {
                 return BadRequest(response);
             }
+            History hist = new History
+            {
+                DateTime = DateTime.Now,
+                User = username!,
+                ActionMessage = "Updated the profile successfully!"
+            };
+            _context.History.Add(hist);
+            await _context.SaveChangesAsync();
             return Ok(response);
         }
 
@@ -127,10 +187,19 @@ namespace ClimateTrackr_Server.Controllers
         {
             var username = User.FindFirst(ClaimTypes.Name)?.Value;
             var response = await _authRepo.SetNotifications(username!, enableNotifications);
+            
             if (!response.Success)
             {
                 return BadRequest(response);
             }
+            History hist = new History
+            {
+                DateTime = DateTime.Now,
+                User = User.FindFirst(ClaimTypes.Name)!.Value,
+                ActionMessage = $"Set Notifications to '{enableNotifications}'!",
+            };
+            _context.History.Add(hist);
+            await _context.SaveChangesAsync();
             return Ok(response);
         }
     }
