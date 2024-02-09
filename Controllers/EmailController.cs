@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using System.Net.Mail;
+using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -72,6 +73,14 @@ namespace ClimateTrackr_Server.Controllers
                     ConnSecurity = data.ConnSecurity,
                     Username = data.Username
                 };
+                History hist = new History
+                {
+                    DateTime = DateTime.Now,
+                    User = User.FindFirst(ClaimTypes.Name)!.Value,
+                    ActionMessage = "Created SMTP Settings successfully!",
+                };
+                _context.History.Add(hist);
+                await _context.SaveChangesAsync();
                 return Ok(response);
             }
             else
@@ -98,6 +107,14 @@ namespace ClimateTrackr_Server.Controllers
                     ConnSecurity = data.ConnSecurity,
                     Username = data.Username
                 };
+                History hist = new History
+                {
+                    DateTime = DateTime.Now,
+                    User = User.FindFirst(ClaimTypes.Name)!.Value,
+                    ActionMessage = "Updated SMTP Settings successfully!",
+                };
+                _context.History.Add(hist);
+                await _context.SaveChangesAsync();
                 return Ok(response);
             }
         }
@@ -198,6 +215,14 @@ namespace ClimateTrackr_Server.Controllers
                     response.Data = true;
                     response.Success = true;
                     response.Message = $"Email sent successfully to {emailRequest.Recipient}!";
+                    History hist = new History
+                    {
+                        DateTime = DateTime.Now,
+                        User = User.FindFirst(ClaimTypes.Name)!.Value,
+                        ActionMessage = "Sent test email successfully!",
+                    };
+                    _context.History.Add(hist);
+                    await _context.SaveChangesAsync();
                     return Ok(response);
                 }
                 catch (Exception ex)

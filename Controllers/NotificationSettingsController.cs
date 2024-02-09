@@ -1,4 +1,5 @@
 using System.Data;
+using System.Security.Claims;
 using System.Text.RegularExpressions;
 using ClimateTrackr_Server.Dtos;
 using Microsoft.AspNetCore.Authorization;
@@ -27,14 +28,14 @@ namespace ClimateTrackr_Server.Controllers
             {
                 response.Message = "You must set a valid email address for your user!";
                 response.Success = false;
-                return Ok(response);
+                return BadRequest(response);
             }
 
             if (!Enum.IsDefined(typeof(NotificationFrequency), request.Frequency))
             {
                 response.Message = "Selected Notification Frequency doesn't exist.";
                 response.Success = false;
-                return response;
+                return BadRequest(response);
             }
 
             if (await NotificationSettingsExist(request.UserId))
@@ -64,6 +65,15 @@ namespace ClimateTrackr_Server.Controllers
                     Frequency = notifSettings!.Frequency,
                 };
                 response.Data = responseData;
+                History hist = new History
+                {
+                    DateTime = DateTime.Now,
+                    User = User.FindFirst(ClaimTypes.Name)!.Value,
+                    ActionMessage = "Updated Notification Settings successfully!",
+                };
+                _context.History.Add(hist);
+                await _context.SaveChangesAsync();
+                return Ok(response);
             }
             else
             {
@@ -92,9 +102,17 @@ namespace ClimateTrackr_Server.Controllers
                     Frequency = notifSettings!.Frequency,
                 };
                 response.Data = responseData;
+                History hist = new History
+                {
+                    DateTime = DateTime.Now,
+                    User = User.FindFirst(ClaimTypes.Name)!.Value,
+                    ActionMessage = "Created Notification Settings successfully!",
+                };
+                _context.History.Add(hist);
+                await _context.SaveChangesAsync();
                 return Ok(response);
             }
-            return Ok(response);
+
         }
 
         private async Task<bool> NotificationSettingsExist(int id)
