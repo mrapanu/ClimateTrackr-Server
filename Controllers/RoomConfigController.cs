@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using ClimateTrackr_Server.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -82,6 +83,14 @@ namespace ClimateTrackr_Server.Controllers
             response.Data = await _context.RoomConfigs.Where(r => r.Window == room.Window).ToListAsync();
             response.Message = $"Successfully added new room to the {room.Window}";
             response.Success = true;
+            History hist = new History
+            {
+                DateTime = DateTime.Now,
+                User = User.FindFirst(ClaimTypes.Name)!.Value,
+                ActionMessage = $"Successfully added room '{room.RoomName}' to '{room.Window.ToString()}'.",
+            };
+            _context.History.Add(hist);
+            await _context.SaveChangesAsync();
             return Ok(response);
         }
 
@@ -106,6 +115,14 @@ namespace ClimateTrackr_Server.Controllers
             response.Data = await _context.RoomConfigs.Where(w => w.Window == roomToDelete.Window).ToListAsync();
             response.Message = $"Successfully deleted room with ID {roomId}";
             response.Success = true;
+            History hist = new History
+            {
+                DateTime = DateTime.Now,
+                User = User.FindFirst(ClaimTypes.Name)!.Value,
+                ActionMessage = $"Successfully removed room '{roomToDelete.RoomName}' from the '{roomToDelete.Window.ToString()}'.",
+            };
+            _context.History.Add(hist);
+            await _context.SaveChangesAsync();
             return Ok(response);
         }
 
@@ -116,7 +133,7 @@ namespace ClimateTrackr_Server.Controllers
             var response = new ServiceResponse<RoomConfig>();
 
             var roomToUpdate = await _context.RoomConfigs.FindAsync(room.Id);
-
+            var roomName = roomToUpdate!.RoomName;
             if (roomToUpdate == null)
             {
                 response.Message = $"Room with ID {room.Id} not found.";
@@ -132,6 +149,14 @@ namespace ClimateTrackr_Server.Controllers
             response.Data = await _context.RoomConfigs.FindAsync(room.Id);
             response.Message = $"Successfully updated room with ID {room.Id}";
             response.Success = true;
+            History hist = new History
+            {
+                DateTime = DateTime.Now,
+                User = User.FindFirst(ClaimTypes.Name)!.Value,
+                ActionMessage = $"Successfully renamed room '{roomName}' from the '{roomToUpdate.Window.ToString()}' with '{room.Name}'.",
+            };
+            _context.History.Add(hist);
+            await _context.SaveChangesAsync();
             return Ok(response);
         }
 
