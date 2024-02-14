@@ -13,5 +13,6 @@ namespace ClimateTrackr_Server.Data
         public DbSet<UserRoom> UserRooms => Set<UserRoom>();
         public DbSet<Smtp> SmtpSettings => Set<Smtp>();
         public DbSet<History> History => Set<History>();
+        public DbSet<Report> Reports => Set<Report>();
     }
 }
