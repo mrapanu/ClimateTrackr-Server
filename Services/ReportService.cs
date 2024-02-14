@@ -166,7 +166,6 @@ namespace ClimateTrackr_Server.Services
 
             htmlBuilder.Append(@"
             <script>
-                // Display warning message
                 var temperatureCtx = document.getElementById('temperatureChart').getContext('2d');
                 var temperatureChart = new Chart(temperatureCtx, {
                     type: 'bar',
@@ -331,7 +330,6 @@ namespace ClimateTrackr_Server.Services
                 <p style='color: #4ad4f7; font-size: 18px;'> The recommended indoor humidity level for most indoor environments is typically between 30% to 50%. This range is considered optimal for comfort, health, and preventing issues such as mold growth and damage to wooden furniture. <br>However, preferences may vary slightly depending on personal comfort and specific needs. It's essential to monitor humidity levels, especially in areas prone to moisture buildup, and use humidifiers or dehumidifiers as needed to maintain a healthy indoor environment.</p>
             </div>
             <script>
-                // Chart.js code for drawing temperature and humidity charts...
                 var temperatureData = {
                     labels: [");
 
