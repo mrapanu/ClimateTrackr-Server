@@ -6,7 +6,7 @@ namespace ClimateTrackr_Server.Models
         public string RoomName { get; set; } = string.Empty;
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
-        public byte[] HtmlContent { get; set; } = new byte[0];
+        public byte[] PdfContent { get; set; } = new byte[0];
         public ReportType Type { get; set; } = ReportType.Daily;
     }
 

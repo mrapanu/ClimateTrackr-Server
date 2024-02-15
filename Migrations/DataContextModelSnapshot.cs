@@ -83,7 +83,7 @@ namespace ClimateTrackr_Server.Migrations
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<byte[]>("HtmlContent")
+                    b.Property<byte[]>("PdfContent")
                         .IsRequired()
                         .HasColumnType("varbinary(max)");
 
