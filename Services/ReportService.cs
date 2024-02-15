@@ -1,4 +1,7 @@
 using System.Text;
+using iText.Kernel.Pdf;
+using iText.Html2pdf;
+using PuppeteerSharp;
 
 namespace ClimateTrackr_Server.Services
 {
@@ -11,375 +14,232 @@ namespace ClimateTrackr_Server.Services
             _scopeFactory = scopeFactory;
         }
 
-        private async Task SaveReportToDatabaseAsync(string roomName, DateTime startDate, DateTime endDate, string htmlContent, ReportType reportType)
+        private async Task TEST()
         {
             using (var scope = _scopeFactory.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<DataContext>();
-                var report = new Report
+                var allReports = await dbContext.Reports.ToListAsync();
+                foreach (var rep in allReports)
                 {
-                    RoomName = roomName,
-                    StartDate = startDate,
-                    EndDate = endDate,
-                    HtmlContent = Encoding.UTF8.GetBytes(htmlContent),
-                    Type = reportType,
-                };
-
-                dbContext.Reports.Add(report);
-                await dbContext.SaveChangesAsync();
+                    string projectDirectory = Directory.GetCurrentDirectory();
+                    string filePath = Path.Combine(projectDirectory, $"{rep.RoomName}-{rep.EndDate.ToString("HH-MM-ss")}-{rep.Type.ToString()}.pdf");
+                    File.WriteAllBytes(filePath, rep.PdfContent);
+                }
             }
         }
-
-        public async Task GenerateHTMLReportCurrentDay(DateTime date, string roomName)
-        {
-            await GenerateHTMLReport(date, roomName, 1, ReportType.Daily);
-        }
-
-        public async Task GenerateHTMLReportLastWeek(DateTime date, string roomName)
-        {
-            await GenerateHTMLReport(date, roomName, 7, ReportType.Weekly);
-        }
-
-        public async Task GenerateHTMLReportLastMonth(DateTime date, string roomName)
-        {
-            await GenerateHTMLReport(date, roomName, 30, ReportType.Monthly);
-        }
-
         private async Task GenerateHTMLReport(DateTime date, string roomName, int days, ReportType reportType)
         {
             DateTime startDate = date.Date.AddDays(-days + 1);
             DateTime endDate = date.Date;
             List<TempAndHum> data = new List<TempAndHum>();
+            int stepTime = (days == 1) ? 10 : (days == 7) ? 60 : 120;
+
             using (var scope = _scopeFactory.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<DataContext>();
-                if (days == 1)
-                {
-                    data = dbContext.TempAndHums
-                        .Where(x => x.Date.Date >= startDate && x.Date.Date <= endDate && x.Room == roomName)
-                        .GroupBy(x => new DateTime(x.Date.Year, x.Date.Month, x.Date.Day, x.Date.Hour, x.Date.Minute / 10 * 10, 0))
-                        .Select(g => new TempAndHum
-                        {
-                            Date = g.Key,
-                            Temperature = g.Average(entry => entry.Temperature),
-                            Humidity = g.Average(entry => entry.Humidity)
-                        })
-                        .ToList();
-                }
+                data = dbContext.TempAndHums
+                    .Where(x => x.Date.Date >= startDate && x.Date.Date <= endDate && x.Room == roomName)
+                    .GroupBy(x => new DateTime(x.Date.Year, x.Date.Month, x.Date.Day, x.Date.Hour, x.Date.Minute / stepTime * stepTime, 0))
+                    .Select(g => new TempAndHum
+                    {
+                        Date = g.Key,
+                        Temperature = g.Average(entry => entry.Temperature),
+                        Humidity = g.Average(entry => entry.Humidity)
+                    }).ToList();
 
-                else if (days == 7)
+                string html = data.Any() ? GenerateHTML(data, roomName, startDate, endDate) : string.Empty;
+                if (html != string.Empty)
                 {
-                    data = dbContext.TempAndHums
-                        .Where(x => x.Date >= startDate && x.Date <= endDate && x.Room == roomName)
-                        .GroupBy(x => new DateTime(x.Date.Year, x.Date.Month, x.Date.Day, x.Date.Hour, x.Date.Minute / 60 * 60, 0))
-                        .Select(g => new TempAndHum
-                        {
-                            Date = g.Key,
-                            Temperature = g.Average(entry => entry.Temperature),
-                            Humidity = g.Average(entry => entry.Humidity)
-                        })
-                        .ToList();
-                }
-                else
-                {
-                    data = dbContext.TempAndHums
-                        .Where(x => x.Date >= startDate && x.Date <= endDate && x.Room == roomName)
-                        .GroupBy(x => new DateTime(x.Date.Year, x.Date.Month, x.Date.Day, x.Date.Hour, x.Date.Minute / 120 * 120, 0))
-                        .Select(g => new TempAndHum
-                        {
-                            Date = g.Key,
-                            Temperature = g.Average(entry => entry.Temperature),
-                            Humidity = g.Average(entry => entry.Humidity)
-                        })
-                        .ToList();
+                    string evalHtml = await PreEvaluateHTMLAsync(html);
+                    byte[] pdfReport = ConvertHtmlToPdf(evalHtml);
+
+                    var report = new Report
+                    {
+                        RoomName = roomName,
+                        StartDate = startDate,
+                        EndDate = endDate,
+                        PdfContent = pdfReport,
+                        Type = reportType,
+                    };
+
+                    dbContext.Reports.Add(report);
+                    await dbContext.SaveChangesAsync();
                 }
 
             }
-            string html;
-
-            if (data.Any())
-            {
-                html = GenerateHTML(data, roomName, startDate, endDate);
-            }
-            else
-            {
-                html = GenerateNoDataHTML(roomName, startDate, endDate);
-            }
-
-            await SaveReportToDatabaseAsync(roomName, startDate, endDate, html, reportType);
         }
-
-        private string GenerateNoDataHTML(string roomName, DateTime startDate, DateTime endDate)
-        {
-            StringBuilder htmlBuilder = new StringBuilder();
-
-            htmlBuilder.Append($@"<!DOCTYPE html>
-            <html>
-            <head>
-                <title>No Data Available</title>
-                <script src='https://cdn.jsdelivr.net/npm/chart.js'></script>
-                <style>
-                    .card {{
-                        border: 1px solid #ccc;
-                        border-radius: 5px;
-                        padding: 10px;
-                        margin-bottom: 20px;
-                        background-color: #f9f9f9;
-                        display: flex;
-                        flex-wrap: wrap;
-                    }}
-                    .left-section {{
-                        flex: 25%;
-                        padding-right: 5%;
-                    }}
-                    .right-section {{
-                        flex: 70%;
-                    }}
-                    .card-title {{
-                        font-size: 20px;
-                        margin-bottom: 10px;
-                    }}
-                    .card-subtitle {{
-                        font-size: 16px;
-                        margin-bottom: 5px;
-                    }}
-                    .card-section {{
-                        margin-bottom: 15px;
-                    }}
-                </style>
-            </head>
-            <body>");
-
-            htmlBuilder.Append($@"
-            <div class='card'>
-                <div class='left-section'>
-                    <div class='card-title'>Temperature and Humidity report from {startDate:MM/dd/yyyy} to {endDate:MM/dd/yyyy} in {roomName}</div>
-                    <div class='card-section' style='background-color: #f9f9f9; padding: 10px; border-radius: 5px;'>
-                        <h3>No data available for {roomName} from {startDate:MM/dd/yyyy} to {endDate:MM/dd/yyyy}.</h3>
-                    </div>
-                </div>
-                <div class='right-section'>
-                    <canvas id='temperatureChart' width='500' height='100'></canvas>
-                    <canvas id='humidityChart' width='500' height='100'></canvas>
-                </div>
-            </div>");
-
-            htmlBuilder.Append(@"
-            <script>
-                var temperatureCtx = document.getElementById('temperatureChart').getContext('2d');
-                var temperatureChart = new Chart(temperatureCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: ['No Data'],
-                        datasets: [{
-                            label: 'No Data',
-                            data: [0],
-                            backgroundColor: '#f39c56',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        scales: {
-                            y: {
-                                beginAtZero: true
-                            }
-                        }
-                    }
-                });
-
-                var humidityCtx = document.getElementById('humidityChart').getContext('2d');
-                var humidityChart = new Chart(humidityCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: ['No Data'],
-                        datasets: [{
-                            label: 'No Data',
-                            data: [0],
-                            backgroundColor: '#4ad4f7',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        scales: {
-                            y: {
-                                beginAtZero: true
-                            }
-                        }
-                    }
-                });
-            </script>
-        ");
-
-            htmlBuilder.Append(@"
-            </body>
-            </html>");
-
-            return htmlBuilder.ToString();
-        }
-
         private string GenerateHTML(List<TempAndHum> data, string roomName, DateTime startDate, DateTime endDate)
         {
             StringBuilder htmlBuilder = new StringBuilder();
 
-            htmlBuilder.Append($@"<!DOCTYPE html>
-            <html>
-            <head>
-                <title>Graphs</title>
-                <script src='https://cdn.jsdelivr.net/npm/chart.js'></script>
-                <style>
-                    .card {{
-                        border: 1px solid #ccc;
-                        border-radius: 5px;
-                        padding: 10px;
-                        margin-bottom: 20px;
-                        background-color: #f9f9f9;
-                        display: flex;
-                        flex-wrap: wrap;
-                    }}
-                    .left-section {{
-                        flex: 25%;
-                        padding-right: 5%;
-                    }}
-                    .right-section {{
-                        flex: 70%;
-                    }}
-                    .card-title {{
-                        font-size: 20px;
-                        margin-bottom: 10px;
-                    }}
-                    .card-subtitle {{
-                        font-size: 16px;
-                        margin-bottom: 5px;
-                    }}
-                    .card-section {{
-                        margin-bottom: 15px;
-                    }}
-                </style>
-            </head>
-            <body>");
+            htmlBuilder.Append(@"
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <script src='https://cdn.jsdelivr.net/npm/chart.js'></script>
+                    <script src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js'></script>
+                    <style>
+                        .card {
+                            margin-bottom: 10px;
+                            display: flex;
+                            flex-wrap: wrap;
+                            align-items: center;
+                            text-align: center;
+                            justify-content: center;
+                        }
+                        .summary-section {
+                            flex: 100%;
+                            flex-direction: column;
+                            display: flex;
+                            flex-wrap: wrap;
+                        }
+                        .graph-section {
+                            flex: 100%;
+                            padding: 5px;
+                            margin-bottom: 150px;
+                        }
+                        .card-title {
+                            border: 2px solid #ccc;
+                            border-radius: 10px;
+                            font-size: 22px;
+                            padding: 10px;
+                            text-align: center;
+                            margin-bottom: 10px;
+                        }
+                        .summary-item {
+                            text-align: center;
+                            margin: 10px;
+                            padding: 10px;
+                        }
+                        .card-subtitle {
+                            font-size: 18px;
+                            margin-bottom: 5px;
+                        }
+                        .card-section {
+                            font-size: 16px;
+                            justify-content: center;
+                            background-color: #f39c56;
+                            color: white;
+                            padding: 10px;
+                            border-radius: 10px;
+                        }
+                    </style>
+                </head>
+                <body>");
 
-            htmlBuilder.Append($@"<div class='card'>
-                <div class='left-section'>
-                    <div class='card-title'>Temperature report from {startDate:MM/dd/yyyy} to {endDate:MM/dd/yyyy} in {roomName}</div>
-                    <div class='card-subtitle'>Average Temperature for the period</div>
-                    <div class='card-section' style='background-color: #f39c56; color: white; padding: 10px; border-radius: 5px;'>");
+            htmlBuilder.Append($@"
+                <div class='card-title'>Temperature report from {startDate:MM/dd/yyyy} to {endDate:MM/dd/yyyy} in {roomName}</div>
+                <div class='card'>
+                    <div class='summary-section'>
+                        <div class='summary-item'>
+                            <div class='card-subtitle'>Average Temperature during the period</div>
+                            <div class='card-section'>Average Temperature: {data.Average(entry => entry.Temperature).ToString("0.0")} °C</div>
+                        </div>
+                        <div class='summary-item'>
+                            <div class='card-subtitle'>Lowest temperature during the period</div>
+                            <div class='card-section'>");
 
-            double averageTemperature = data.Average(entry => entry.Temperature);
-            htmlBuilder.Append("Average Temperature: " + averageTemperature.ToString("0.0") + " °C");
-
-            htmlBuilder.Append(@"</div>
-                    <div class='card-subtitle'>Lowest temperature during the period</div>
-                    <div class='card-section' style='background-color: #f39c56; color: white; padding: 10px; border-radius: 5px;'>");
             var lowestTemperatures = data.OrderBy(entry => entry.Temperature).Take(3);
             foreach (var entry in lowestTemperatures)
-            {
-                htmlBuilder.Append($"Timestamp: {entry.Date:HH:mm}, Temperature: {entry.Temperature.ToString("0.0")} °C<br>");
-            }
+                htmlBuilder.Append($"Timestamp: {entry.Date:MM-dd HH:mm}, Temperature: {entry.Temperature.ToString("0.0")} °C<br>");
 
             htmlBuilder.Append(@"</div>
+                </div>
+                <div class='summary-item'>
                     <div class='card-subtitle'>Highest Temperature during the period</div>
-                    <div class='card-section' style='background-color: #f39c56; color: white; padding: 10px; border-radius: 5px;'>");
+                    <div class='card-section'>");
 
             var highestTemperatures = data.OrderByDescending(entry => entry.Temperature).Take(3);
             foreach (var entry in highestTemperatures)
-            {
-                htmlBuilder.Append($"Timestamp: {entry.Date:HH:mm}, Temperature: {entry.Temperature.ToString("0.0")} °C<br>");
-            }
+                htmlBuilder.Append($"Timestamp: {entry.Date:MM-dd HH:mm}, Temperature: {entry.Temperature.ToString("0.0")} °C<br>");
 
             htmlBuilder.Append(@"</div>
+                    </div>
                 </div>
-                <div class='right-section'>
-                    <canvas id='temperatureChart' width='500' height='100'></canvas>
+            </div>
+            <p style='text-align: justify;'>The World Health Organization in 1987 found that comfortable indoor temperatures of between 18 and 24 °C (64 and 75 °F) were not associated with health risks for healthy adults with appropriate clothing, humidity, and other factors. For infants, elderly, and those with significant health problems, a minimum 20 °C (68 °F) was recommended. Temperatures lower than 16 °C (61 °F) with humidity above 65% were associated with respiratory hazards including allergies.</p>
+            <div class='card'>
+                <div class='graph-section'>
+                    <canvas id='temperatureChart' width='600' height='280'></canvas>
                 </div>
-                <p style='color: #f39c56; font-size: 18px;'>The World Health Organization in 1987 found that comfortable indoor temperatures of between 18 and 24 °C (64 and 75 °F) were not associated with health risks for healthy adults with appropriate clothing, humidity, and other factors. For infants, elderly, and those with significant health problems, a minimum 20 °C (68 °F) was recommended. Temperatures lower than 16 °C (61 °F) with humidity above 65% were associated with respiratory hazards including allergies.</p>
             </div>");
 
-            htmlBuilder.Append($@"<div class='card'>
-                <div class='left-section'>
-                    <div class='card-title'>Humidity report from {startDate:MM/dd/yyyy} to {endDate:MM/dd/yyyy} in {roomName}</div>
-                    <div class='card-subtitle'>Average Humidity for the period</div>
-                    <div class='card-section' style='background-color: #4ad4f7; color: white; padding: 10px;  border-radius: 5px;'>");
-            double averageHumidity = data.Average(entry => entry.Humidity);
-            htmlBuilder.Append("Average Humidity: " + averageHumidity.ToString("0.0") + " %");
-
-            htmlBuilder.Append(@"</div>
-                    <div class='card-subtitle'>Lowest Humidity during the period</div>
-                    <div class='card-section' style='background-color: #4ad4f7; color: white; padding: 10px; border-radius: 5px;'>");
+            htmlBuilder.Append($@"
+                <div class='card-title'>Humidity report from {startDate:MM/dd/yyyy} to {endDate:MM/dd/yyyy} in {roomName}</div>
+                <div class='card'>
+                    <div class='summary-section'>
+                        <div class='summary-item'>
+                            <div class='card-subtitle'>Average Humidity for the period</div>
+                            <div class='card-section' style='background-color: #4ad4f7;'>Average Humidity: {data.Average(entry => entry.Humidity).ToString("0.0")} %</div>
+                        </div>
+                        <div class='summary-item'>
+                            <div class='card-subtitle'>Lowest Humidity during the period</div>
+                            <div class='card-section' style='background-color: #4ad4f7;'>");
 
             var lowestHumidities = data.OrderBy(entry => entry.Humidity).Take(3);
             foreach (var entry in lowestHumidities)
-            {
-                htmlBuilder.Append($"Timestamp: {entry.Date:HH:mm}, Humidity: {entry.Humidity.ToString("0.0")} %<br>");
-            }
+                htmlBuilder.Append($"Timestamp: {entry.Date:MM-dd HH:mm}, Humidity: {entry.Humidity.ToString("0.0")} %<br>");
 
             htmlBuilder.Append(@"</div>
+                </div>
+                <div class='summary-item'>
                     <div class='card-subtitle'>Highest Humidity during the period</div>
-                    <div class='card-section' style='background-color: #4ad4f7; color: white; padding: 10px; border-radius: 5px;'>");
+                    <div class='card-section' style='background-color: #4ad4f7;'>");
 
             var highestHumidities = data.OrderByDescending(entry => entry.Humidity).Take(3);
             foreach (var entry in highestHumidities)
-            {
-                htmlBuilder.Append($"Timestamp: {entry.Date:HH:mm}, Humidity: {entry.Humidity.ToString("0.0")} %<br>");
-            }
+                htmlBuilder.Append($"Timestamp: {entry.Date:MM-dd HH:mm}, Humidity: {entry.Humidity.ToString("0.0")} %<br>");
 
             htmlBuilder.Append(@"</div>
+                    </div>
                 </div>
-                <div class='right-section'>
-                    <canvas id='humidityChart' width='500' height='100'></canvas>
-                </div>
-                <p style='color: #4ad4f7; font-size: 18px;'> The recommended indoor humidity level for most indoor environments is typically between 30% to 50%. This range is considered optimal for comfort, health, and preventing issues such as mold growth and damage to wooden furniture. <br>However, preferences may vary slightly depending on personal comfort and specific needs. It's essential to monitor humidity levels, especially in areas prone to moisture buildup, and use humidifiers or dehumidifiers as needed to maintain a healthy indoor environment.</p>
             </div>
-            <script>
-                var temperatureData = {
-                    labels: [");
+            <p style='text-align: justify;'>The recommended indoor humidity level for most indoor environments is typically between 30% to 50%. This range is considered optimal for comfort, health, and preventing issues such as mold growth and damage to wooden furniture. However, preferences may vary slightly depending on personal comfort and specific needs. It's essential to monitor humidity levels, especially in areas prone to moisture buildup, and use humidifiers or dehumidifiers as needed to maintain a healthy indoor environment.</p>          
+            <div class='card'>
+                <div class='graph-section'>
+                    <canvas id='humidityChart' width='600' height='280'></canvas>
+                </div>
+            </div>");
+
+            htmlBuilder.Append(@"
+                <script>
+                    var temperatureData = {
+                        labels: [");
 
             foreach (var entry in data)
-            {
-                var dayMonth = entry.Date.ToString("dd MMM");
-                var timeOfDay = entry.Date.ToString("HH:mm");
-                var label = $"{dayMonth} {timeOfDay}";
-                htmlBuilder.Append($"'{label}',");
-            }
+                htmlBuilder.Append($"'{entry.Date.ToString("dd MMM")} {entry.Date.ToString("HH:mm")}',");
 
             htmlBuilder.Append(@"],
-                    datasets: [{
-                        label: 'Temperature',
-                        data: [");
+                datasets: [{
+                    label: 'Temperature',
+                    data: [");
 
             foreach (var entry in data)
-            {
                 htmlBuilder.Append($"{Math.Round(entry.Temperature, 1)},");
-            }
 
             htmlBuilder.Append(@"],
-                        borderColor: '#f39c56',
-                        backgroundColor: 'rgba(243, 156, 86, 0.4)',
-                        borderWidth: 1,
-                        fill: 'start',
-                        pointRadius: 1,
-                    }]
-                };
+                    borderColor: '#f39c56',
+                    backgroundColor: 'rgba(243, 156, 86, 0.4)',
+                    borderWidth: 1,
+                    fill: 'start',
+                    pointRadius: 1,
+                }]
+            };
 
-                var humidityData = {
-                    labels: [");
+            var humidityData = {
+                labels: [");
 
             foreach (var entry in data)
-            {
-                var dayMonth = entry.Date.ToString("dd MMM");
-                var timeOfDay = entry.Date.ToString("HH:mm");
-                var label = $"{dayMonth} {timeOfDay}";
-                htmlBuilder.Append($"'{label}',");
-            }
+                htmlBuilder.Append($"'{entry.Date.ToString("dd MMM")} {entry.Date.ToString("HH:mm")}',");
 
             htmlBuilder.Append(@"],
-                    datasets: [{
-                        label: 'Humidity',
-                        data: [");
+                datasets: [{
+                    label: 'Humidity',
+                    data: [");
 
             foreach (var entry in data)
-            {
                 htmlBuilder.Append($"{Math.Round(entry.Humidity, 1)},");
-            }
 
             htmlBuilder.Append(@"],
                         borderColor: '#4ad4f7',
@@ -389,7 +249,6 @@ namespace ClimateTrackr_Server.Services
                         pointRadius: 1,
                     }]
                 };
-
                 var temperatureCtx = document.getElementById('temperatureChart').getContext('2d');
                 var temperatureChart = new Chart(temperatureCtx, {
                     type: 'line',
@@ -405,7 +264,6 @@ namespace ClimateTrackr_Server.Services
                         maintainAspectRatio: false
                     }
                 });
-
                 var humidityCtx = document.getElementById('humidityChart').getContext('2d');
                 var humidityChart = new Chart(humidityCtx, {
                     type: 'line',
@@ -421,12 +279,37 @@ namespace ClimateTrackr_Server.Services
                         maintainAspectRatio: false
                     }
                 });
-            </script>
-        </body>
-        </html>");
+            </script>");
+
+            htmlBuilder.Append(@"
+                <script>
+                    setTimeout(function() {
+                        html2canvas(document.getElementById('temperatureChart'), {
+                            onrendered: function(canvas) {
+                                var imgData = canvas.toDataURL('image/png');
+                                var img = document.createElement('img');
+                                img.src = imgData;
+                                var chartCanvas = document.getElementById('temperatureChart');
+                                chartCanvas.parentNode.replaceChild(img, chartCanvas);
+                            }
+                        });
+                        html2canvas(document.getElementById('humidityChart'), {
+                            onrendered: function(canvas) {
+                                var imgData = canvas.toDataURL('image/png');
+                                var img = document.createElement('img');
+                                img.src = imgData;
+                                var chartCanvas = document.getElementById('humidityChart');
+                                chartCanvas.parentNode.replaceChild(img, chartCanvas);
+                            }
+                        });
+                    }, 500);
+                </script>
+                </body>
+                </html>");
 
             return htmlBuilder.ToString();
         }
+
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             while (!stoppingToken.IsCancellationRequested)
@@ -456,11 +339,33 @@ namespace ClimateTrackr_Server.Services
                             {
                                 await GenerateHTMLReportCurrentDay(currentTime, roomConfig.RoomName);
                             }
+                            if (currentTime.Hour == 20 && currentTime.Minute == 26)
+                                await WritePdfsWithAll();
                         }
                     }
                 }
                 await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
             }
+        }
+
+        public async Task GenerateHTMLReportCurrentDay(DateTime date, string roomName)
+        {
+            await GenerateHTMLReport(date, roomName, 1, ReportType.Daily);
+
+        }
+        public async Task WritePdfsWithAll()
+        {
+            await TEST();
+        }
+
+        public async Task GenerateHTMLReportLastWeek(DateTime date, string roomName)
+        {
+            await GenerateHTMLReport(date, roomName, 7, ReportType.Weekly);
+        }
+
+        public async Task GenerateHTMLReportLastMonth(DateTime date, string roomName)
+        {
+            await GenerateHTMLReport(date, roomName, 30, ReportType.Monthly);
         }
 
         private bool ShouldGenerateLastMonthReport(DateTime currentTime)
@@ -475,7 +380,37 @@ namespace ClimateTrackr_Server.Services
 
         private bool ShouldGenerateCurrentDayReport(DateTime currentTime)
         {
-            return currentTime.Hour == 23 && currentTime.Minute == 30;
+            return currentTime.Hour == 23 && currentTime.Minute == 55;
         }
+
+        static byte[] ConvertHtmlToPdf(string htmlContent)
+        {
+            using (MemoryStream stream = new MemoryStream())
+            {
+
+                PdfWriter writer = new PdfWriter(stream);
+                PdfDocument pdf = new PdfDocument(writer);
+                ConverterProperties properties = new ConverterProperties();
+                HtmlConverter.ConvertToPdf(htmlContent, pdf, properties);
+                pdf.Close();
+                return stream.ToArray();
+            }
+        }
+
+        private async Task<string> PreEvaluateHTMLAsync(string htmlContent)
+        {
+            await new BrowserFetcher().DownloadAsync();
+            var browser = await Puppeteer.LaunchAsync(new LaunchOptions
+            {
+                Headless = true,
+            });
+            var page = await browser.NewPageAsync();
+            await page.SetContentAsync(htmlContent);
+            await page.WaitForTimeoutAsync(1000);
+            string evaluatedHtml = await page.GetContentAsync();
+            await browser.CloseAsync();
+            return evaluatedHtml;
+        }
+
     }
 }
