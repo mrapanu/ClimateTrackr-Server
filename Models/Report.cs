@@ -3,6 +3,7 @@ namespace ClimateTrackr_Server.Models
     public class Report
     {
         public int Id { get; set; }
+        public int RoomId { get; set; }
         public string RoomName { get; set; } = string.Empty;
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
