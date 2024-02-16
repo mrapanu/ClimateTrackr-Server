@@ -54,7 +54,7 @@ builder.Services.AddCors(options =>
     });
 });
 
-//RabbitMQ
+//RabbitMQ Service
 
 builder.Services.Configure<RabbitMQConfig>(o =>
 {
@@ -69,6 +69,10 @@ builder.Services.AddHostedService<ConsumerHostedService>();
 //Report Service
 
 builder.Services.AddHostedService<ReportService>();
+
+//Notification Service
+
+builder.Services.AddHostedService<NotificationService>();
 
 var app = builder.Build();
 
