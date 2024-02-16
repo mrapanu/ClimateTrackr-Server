@@ -14,21 +14,7 @@ namespace ClimateTrackr_Server.Services
             _scopeFactory = scopeFactory;
         }
 
-        private async Task TEST()
-        {
-            using (var scope = _scopeFactory.CreateScope())
-            {
-                var dbContext = scope.ServiceProvider.GetRequiredService<DataContext>();
-                var allReports = await dbContext.Reports.ToListAsync();
-                foreach (var rep in allReports)
-                {
-                    string projectDirectory = Directory.GetCurrentDirectory();
-                    string filePath = Path.Combine(projectDirectory, $"{rep.RoomName}-{rep.EndDate.ToString("HH-MM-ss")}-{rep.Type.ToString()}.pdf");
-                    File.WriteAllBytes(filePath, rep.PdfContent);
-                }
-            }
-        }
-        private async Task GenerateHTMLReport(DateTime date, string roomName, int days, ReportType reportType)
+        private async Task GenerateHTMLReport(DateTime date, string roomName, int roomId, int days, ReportType reportType)
         {
             DateTime startDate = date.Date.AddDays(-days + 1);
             DateTime endDate = date.Date;
@@ -56,6 +42,7 @@ namespace ClimateTrackr_Server.Services
 
                     var report = new Report
                     {
+                        RoomId = roomId,
                         RoomName = roomName,
                         StartDate = startDate,
                         EndDate = endDate,
@@ -327,20 +314,18 @@ namespace ClimateTrackr_Server.Services
                         {
                             if (ShouldGenerateLastMonthReport(currentTime))
                             {
-                                await GenerateHTMLReportLastMonth(currentTime, roomConfig.RoomName);
+                                await GenerateHTMLReportLastMonth(currentTime, roomConfig.RoomName, roomConfig.Id);
                             }
 
                             if (ShouldGenerateLastWeekReport(currentTime))
                             {
-                                await GenerateHTMLReportLastWeek(currentTime, roomConfig.RoomName);
+                                await GenerateHTMLReportLastWeek(currentTime, roomConfig.RoomName, roomConfig.Id);
                             }
 
                             if (ShouldGenerateCurrentDayReport(currentTime))
                             {
-                                await GenerateHTMLReportCurrentDay(currentTime, roomConfig.RoomName);
+                                await GenerateHTMLReportCurrentDay(currentTime, roomConfig.RoomName, roomConfig.Id);
                             }
-                            if (currentTime.Hour == 20 && currentTime.Minute == 26)
-                                await WritePdfsWithAll();
                         }
                     }
                 }
@@ -348,24 +333,20 @@ namespace ClimateTrackr_Server.Services
             }
         }
 
-        public async Task GenerateHTMLReportCurrentDay(DateTime date, string roomName)
+        public async Task GenerateHTMLReportCurrentDay(DateTime date, string roomName, int roomId)
         {
-            await GenerateHTMLReport(date, roomName, 1, ReportType.Daily);
+            await GenerateHTMLReport(date, roomName, roomId, 1, ReportType.Daily);
 
         }
-        public async Task WritePdfsWithAll()
+
+        public async Task GenerateHTMLReportLastWeek(DateTime date, string roomName, int roomId)
         {
-            await TEST();
+            await GenerateHTMLReport(date, roomName, roomId, 7, ReportType.Weekly);
         }
 
-        public async Task GenerateHTMLReportLastWeek(DateTime date, string roomName)
+        public async Task GenerateHTMLReportLastMonth(DateTime date, string roomName, int roomId)
         {
-            await GenerateHTMLReport(date, roomName, 7, ReportType.Weekly);
-        }
-
-        public async Task GenerateHTMLReportLastMonth(DateTime date, string roomName)
-        {
-            await GenerateHTMLReport(date, roomName, 30, ReportType.Monthly);
+            await GenerateHTMLReport(date, roomName, roomId, 30, ReportType.Monthly);
         }
 
         private bool ShouldGenerateLastMonthReport(DateTime currentTime)
@@ -380,7 +361,7 @@ namespace ClimateTrackr_Server.Services
 
         private bool ShouldGenerateCurrentDayReport(DateTime currentTime)
         {
-            return currentTime.Hour == 23 && currentTime.Minute == 55;
+            return currentTime.Hour == 10 && currentTime.Minute == 39;
         }
 
         static byte[] ConvertHtmlToPdf(string htmlContent)
