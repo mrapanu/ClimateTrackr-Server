@@ -210,7 +210,7 @@ namespace ClimateTrackr_Server.Services
                     backgroundColor: 'rgba(243, 156, 86, 0.4)',
                     borderWidth: 1,
                     fill: 'start',
-                    pointRadius: 1,
+                    pointRadius: 0,
                 }]
             };
 
@@ -233,7 +233,7 @@ namespace ClimateTrackr_Server.Services
                         backgroundColor: 'rgba(74, 212, 247, 0.4)',
                         borderWidth: 1,
                         fill: 'start',
-                        pointRadius: 1,
+                        pointRadius: 0,
                     }]
                 };
                 var temperatureCtx = document.getElementById('temperatureChart').getContext('2d');
@@ -351,17 +351,19 @@ namespace ClimateTrackr_Server.Services
 
         private bool ShouldGenerateLastMonthReport(DateTime currentTime)
         {
-            return currentTime.Day == DateTime.DaysInMonth(currentTime.Year, currentTime.Month) && currentTime.Hour == 23 && currentTime.Minute == 30;
+            //return currentTime.Day == DateTime.DaysInMonth(currentTime.Year, currentTime.Month) && currentTime.Hour == 23 && currentTime.Minute == 30;
+            return currentTime.Hour == 11 && currentTime.Minute == 30;
         }
 
         private bool ShouldGenerateLastWeekReport(DateTime currentTime)
         {
-            return currentTime.DayOfWeek == DayOfWeek.Sunday && currentTime.Hour == 23 && currentTime.Minute == 40;
+            //return currentTime.DayOfWeek == DayOfWeek.Sunday && currentTime.Hour == 23 && currentTime.Minute == 40;
+            return currentTime.Hour == 11 && currentTime.Minute == 35;
         }
 
         private bool ShouldGenerateCurrentDayReport(DateTime currentTime)
         {
-            return currentTime.Hour == 10 && currentTime.Minute == 39;
+            return currentTime.Hour == 11 && currentTime.Minute == 40;
         }
 
         static byte[] ConvertHtmlToPdf(string htmlContent)
