@@ -2,8 +2,6 @@
 using System.Net;
 using System.Net.Mail;
 using System.Net.Mime;
-using System.Text.RegularExpressions;
-using ClimateTrackr_Server.Dtos;
 
 namespace ClimateTrackr_Server.Services
 {
@@ -95,6 +93,7 @@ namespace ClimateTrackr_Server.Services
                     .Where(ns => enabledUsers.Select(u => u.Id).Contains(ns.UserId) &&
                                  (ns.Frequency == NotificationFrequency.Daily ||
                                   ns.Frequency == NotificationFrequency.DailyWeekly ||
+                                  ns.Frequency == NotificationFrequency.DailyMonthly || 
                                   ns.Frequency == NotificationFrequency.All))
                     .Select(ns => new { ns.UserEmail, ns.SelectedRoomNames })
                     .ToListAsync();
@@ -114,11 +113,45 @@ namespace ClimateTrackr_Server.Services
                 }
             }
         }
+
+        private async Task SendWeeklyEmail()
+        {
+            using (var scope = _scopeFactory.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<DataContext>();
+                DateTime currentDate = DateTime.Today;
+                var weeklyReports = await dbContext.Reports.Where(r => r.EndDate.Date == currentDate && r.Type == ReportType.Weekly).ToListAsync();
+                var enabledUsers = await dbContext.Users.Where(u => u.EnableNotifications == true).ToListAsync();
+                var dailyRecipients = await dbContext.NotificationSettings
+                    .Where(ns => enabledUsers.Select(u => u.Id).Contains(ns.UserId) &&
+                                 (ns.Frequency == NotificationFrequency.Weekly ||
+                                  ns.Frequency == NotificationFrequency.DailyWeekly ||
+                                  ns.Frequency == NotificationFrequency.WeeklyMonthly ||
+                                  ns.Frequency == NotificationFrequency.All))
+                    .Select(ns => new { ns.UserEmail, ns.SelectedRoomNames })
+                    .ToListAsync();
+
+                foreach (var report in weeklyReports)
+                {
+                    foreach (var dailyRecipient in dailyRecipients)
+                    {
+                        foreach (var usrRooms in dailyRecipient.SelectedRoomNames)
+                        {
+                            if (report.RoomId == usrRooms.RoomConfigId)
+                            {
+                                await SendEmail(report.PdfContent, dailyRecipient.UserEmail, report.Type, report.RoomName);
+                            }
+                        }
+                    }
+                }
+            }
+        }
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             while (!stoppingToken.IsCancellationRequested)
             {
                 //await SendDailyEmail();
+                await SendWeeklyEmail();
                 await Task.Delay(TimeSpan.FromMinutes(8), stoppingToken);
             }
         }
