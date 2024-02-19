@@ -106,7 +106,7 @@ namespace ClimateTrackr_Server.Services
                         {
                             if (report.RoomId == usrRooms.RoomConfigId)
                             {
-                                //await SendEmail(report.PdfContent, dailyRecipient.UserEmail, report.Type, report.RoomName);
+                                await SendEmail(report.PdfContent, dailyRecipient.UserEmail, report.Type, report.RoomName);
                             }
                         }
                     }
@@ -182,19 +182,17 @@ namespace ClimateTrackr_Server.Services
 
         private bool ShouldSendEmailsLastMonthReport(DateTime currentTime)
         {
-            //return currentTime.Day == DateTime.DaysInMonth(currentTime.Year, currentTime.Month) && currentTime.Hour == 23 && currentTime.Minute == 30;
-            return currentTime.Hour == 11 && currentTime.Minute == 45;
+            return currentTime.Day == DateTime.DaysInMonth(currentTime.Year, currentTime.Month) && currentTime.Hour == 23 && currentTime.Minute == 45;
         }
 
         private bool ShouldSendEmailsLastWeekReport(DateTime currentTime)
         {
-            //return currentTime.DayOfWeek == DayOfWeek.Sunday && currentTime.Hour == 23 && currentTime.Minute == 40;
-            return currentTime.Hour == 11 && currentTime.Minute == 50;
+            return currentTime.DayOfWeek == DayOfWeek.Sunday && currentTime.Hour == 23 && currentTime.Minute == 50;
         }
 
         private bool ShouldSendEmailsCurrentDayReport(DateTime currentTime)
         {
-            return currentTime.Hour == 11 && currentTime.Minute == 55;
+            return currentTime.Hour == 23 && currentTime.Minute == 55;
         }
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
