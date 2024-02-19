@@ -26,6 +26,7 @@ namespace ClimateTrackr_Server.Services
                 var dbContext = scope.ServiceProvider.GetRequiredService<DataContext>();
                 data = dbContext.TempAndHums
                     .Where(x => x.Date.Date >= startDate && x.Date.Date <= endDate && x.Room == roomName)
+                    .OrderBy(x => x.Date)
                     .GroupBy(x => new DateTime(x.Date.Year, x.Date.Month, x.Date.Day, x.Date.Hour, x.Date.Minute / stepTime * stepTime, 0))
                     .Select(g => new TempAndHum
                     {
@@ -58,6 +59,7 @@ namespace ClimateTrackr_Server.Services
         }
         private string GenerateHTML(List<TempAndHum> data, string roomName, DateTime startDate, DateTime endDate)
         {
+            data = data.OrderBy(entry => entry.Date).ToList();
             StringBuilder htmlBuilder = new StringBuilder();
 
             htmlBuilder.Append(@"
@@ -289,7 +291,7 @@ namespace ClimateTrackr_Server.Services
                                 chartCanvas.parentNode.replaceChild(img, chartCanvas);
                             }
                         });
-                    }, 500);
+                    }, 1000);
                 </script>
                 </body>
                 </html>");
@@ -351,19 +353,17 @@ namespace ClimateTrackr_Server.Services
 
         private bool ShouldGenerateLastMonthReport(DateTime currentTime)
         {
-            //return currentTime.Day == DateTime.DaysInMonth(currentTime.Year, currentTime.Month) && currentTime.Hour == 23 && currentTime.Minute == 30;
-            return currentTime.Hour == 11 && currentTime.Minute == 30;
+            return currentTime.Day == DateTime.DaysInMonth(currentTime.Year, currentTime.Month) && currentTime.Hour == 23 && currentTime.Minute == 30;
         }
 
         private bool ShouldGenerateLastWeekReport(DateTime currentTime)
         {
-            //return currentTime.DayOfWeek == DayOfWeek.Sunday && currentTime.Hour == 23 && currentTime.Minute == 40;
-            return currentTime.Hour == 11 && currentTime.Minute == 35;
+            return currentTime.DayOfWeek == DayOfWeek.Sunday && currentTime.Hour == 23 && currentTime.Minute == 35;
         }
 
         private bool ShouldGenerateCurrentDayReport(DateTime currentTime)
         {
-            return currentTime.Hour == 11 && currentTime.Minute == 40;
+            return currentTime.Hour == 23 && currentTime.Minute == 40;
         }
 
         static byte[] ConvertHtmlToPdf(string htmlContent)
@@ -382,17 +382,42 @@ namespace ClimateTrackr_Server.Services
 
         private async Task<string> PreEvaluateHTMLAsync(string htmlContent)
         {
-            await new BrowserFetcher().DownloadAsync();
-            var browser = await Puppeteer.LaunchAsync(new LaunchOptions
+            string skipChromeDownload = Environment.GetEnvironmentVariable("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD")!;
+            string executablePath = Environment.GetEnvironmentVariable("PUPPETEER_EXECUTABLE_PATH")!;
+            if (skipChromeDownload == "true")
             {
-                Headless = true,
-            });
-            var page = await browser.NewPageAsync();
-            await page.SetContentAsync(htmlContent);
-            await page.WaitForTimeoutAsync(1000);
-            string evaluatedHtml = await page.GetContentAsync();
-            await browser.CloseAsync();
-            return evaluatedHtml;
+                var browser = await Puppeteer.LaunchAsync(new LaunchOptions
+                {
+                    Headless = true,
+                    ExecutablePath = executablePath,
+                    Args = new[] { "--no-sandbox" }
+
+                });
+
+                var page = await browser.NewPageAsync();
+                await page.SetContentAsync(htmlContent);
+                await page.WaitForTimeoutAsync(2000);
+                string evaluatedHtml = await page.GetContentAsync();
+                await browser.CloseAsync();
+                return evaluatedHtml;
+            }
+            else
+            {
+                await new BrowserFetcher().DownloadAsync();
+                var browser = await Puppeteer.LaunchAsync(new LaunchOptions
+                {
+                    Headless = true,
+                });
+
+                var page = await browser.NewPageAsync();
+                await page.SetContentAsync(htmlContent);
+                await page.WaitForTimeoutAsync(2000);
+                string evaluatedHtml = await page.GetContentAsync();
+                await browser.CloseAsync();
+                return evaluatedHtml;
+            }
+
+
         }
 
     }
