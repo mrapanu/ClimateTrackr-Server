@@ -16,6 +16,9 @@ FROM mcr.microsoft.com/dotnet/aspnet:7.0
 # Set the working directory inside the container
 WORKDIR /app
 
+# Install Chromium for puppeteer sharp
+RUN apt-get update && apt-get install -y chromium
+
 # Copy the published output from the build image
 COPY --from=build-env /app/out .
 
@@ -29,6 +32,8 @@ ENV RABBITMQ_CONN_STRING=<Example:amqp://guest:guest@localhost:5672/>
 ENV RABBITMQ_EXCHANGE_NAME=<exchange_name>
 ENV RABBITMQ_ROUTING_KEY=<your_routing_key>
 ENV JWT_SECRET_TOKEN=<secret_token_min_16_chars>
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=false
+ENV PUPPETEER_EXECUTABLE_PATH=<PATH_TO_CHROMIUM>
 
 # Run Entity Framework migrations and start the application
 ENTRYPOINT ["dotnet", "ClimateTrackr-Server.dll"]
