@@ -41,7 +41,7 @@ namespace ClimateTrackr_Server.Services
                     await WriteToDatabaseAsync(message!, dbContext, ea.DeliveryTag);
                 }
                 await Task.CompletedTask;
-                _model.BasicAck(ea.DeliveryTag, false);
+
             };
             _model.BasicConsume("climateTrackr", false, consumer);
             await Task.CompletedTask;
@@ -71,10 +71,11 @@ namespace ClimateTrackr_Server.Services
                 // Add the entity to the DbContext and save changes asynchronously
                 context.TempAndHums.Add(tempAndHum);
                 await context.SaveChangesAsync();
+                _model.BasicAck(deliveryTag, false);
             }
             catch (Exception ex)
             {
-                _model.BasicNack(deliveryTag, false, true);
+                _model.BasicReject(deliveryTag, false);
                 Console.WriteLine($"Error writing to database: {ex.Message}");
             }
         }
