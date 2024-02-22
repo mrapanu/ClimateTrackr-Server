@@ -71,6 +71,7 @@ namespace ClimateTrackr_Server.Services
                 // Add the entity to the DbContext and save changes asynchronously
                 context.TempAndHums.Add(tempAndHum);
                 await context.SaveChangesAsync();
+                await Task.CompletedTask;
                 _model.BasicAck(deliveryTag, false);
             }
             catch (Exception ex)
