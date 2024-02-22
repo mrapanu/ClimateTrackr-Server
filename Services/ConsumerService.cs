@@ -14,9 +14,17 @@ namespace ClimateTrackr_Server.Services
         {
             _connection = rabbitMqService.CreateChannel();
             _model = _connection.CreateModel();
-            _model.QueueDeclare("climateTrackr", durable: true, exclusive: false, autoDelete: false);
+            _model.QueueDeclare("climateTrackr", durable: true, exclusive: false, autoDelete: false, arguments: new Dictionary<string, object>
+            {
+                {"x-dead-letter-exchange", "climateTrackr_dlx"},
+                {"x-dead-letter-routing-key", rabbitMqService.GetRoutingKey()},
+                {"x-message-ttl", 120000}
+            });
+            _model.QueueDeclare("climateTrackrDLQ", durable: true, exclusive: false, autoDelete: false);
+            _model.ExchangeDeclare("climateTrackr_dlx", ExchangeType.Direct, durable: true, autoDelete: false);
             _model.ExchangeDeclare(rabbitMqService.GetExName(), ExchangeType.Direct, durable: true, autoDelete: false);
             _model.QueueBind("climateTrackr", rabbitMqService.GetExName(), rabbitMqService.GetRoutingKey());
+            _model.QueueBind("climateTrackrDLQ", "climateTrackr_dlx", rabbitMqService.GetRoutingKey());
             _serviceScopeFactory = serviceScopeFactory;
         }
         public async Task ReadMessgaes()
@@ -26,11 +34,11 @@ namespace ClimateTrackr_Server.Services
             {
                 var body = ea.Body.ToArray();
                 var message = JsonConvert.DeserializeObject<TempAndHum>(Encoding.UTF8.GetString(body));
-                
+
                 using (var scope = _serviceScopeFactory.CreateScope())
                 {
                     var dbContext = scope.ServiceProvider.GetRequiredService<DataContext>();
-                    await WriteToDatabaseAsync(message!, dbContext);
+                    await WriteToDatabaseAsync(message!, dbContext, ea.DeliveryTag);
                 }
                 await Task.CompletedTask;
                 _model.BasicAck(ea.DeliveryTag, false);
@@ -47,7 +55,7 @@ namespace ClimateTrackr_Server.Services
                 _connection.Close();
         }
 
-        private async Task WriteToDatabaseAsync(TempAndHum message, DataContext context)
+        private async Task WriteToDatabaseAsync(TempAndHum message, DataContext context, ulong deliveryTag)
         {
             try
             {
@@ -66,6 +74,7 @@ namespace ClimateTrackr_Server.Services
             }
             catch (Exception ex)
             {
+                _model.BasicNack(deliveryTag, false, true);
                 Console.WriteLine($"Error writing to database: {ex.Message}");
             }
         }
