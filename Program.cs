@@ -85,13 +85,25 @@ using (var serviceScope = app.Services.GetRequiredService<IServiceScopeFactory>(
         try
         {
             db.EnsureCreated();
-            db.Migrate();
             logger.LogInformation("Database created successfully.");
+            // Create default admin user
+            var adminUser = new User
+            {
+                Username = "ctadmin",
+                PasswordHash = Convert.FromHexString("10E9D598D32B9966015729EFF8F2EB4743DC8907B75F9281F6775EBE368F17D04A2C0DB091E40A926F238D25309FE9FAAC71353A662D5C3BE573051242801A33"),
+                PasswordSalt = Convert.FromHexString("59C5D8E6CAD208D3AC3B80A40E7C979ACE4233101D8C89E0C7D03EB54551A5121A8358B0D497DBF38882A2C9D03D6D551D6A8CB4D77CCEDA91ACAD17B780AC2A747E26DE598A261FB403C7E6EE1D4230644398C5C4883EA14C04427D9D26340092112BDE02820688A7CE4346BF368FA2D99927FD125A57D5836E36D0B4B1B473"),
+                Usertype = UserType.Admin
+            };
+            var dbContext = serviceScope.ServiceProvider.GetRequiredService<DataContext>();
+            dbContext.Users.Add(adminUser);
+            await dbContext.SaveChangesAsync();
+
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "An error occurred while creating the database.");
         }
+
     }
 }
 
