@@ -18,7 +18,7 @@ namespace ClimateTrackr_Server.Services
             {
                 {"x-dead-letter-exchange", "climateTrackr_dlx"},
                 {"x-dead-letter-routing-key", rabbitMqService.GetRoutingKey()},
-                {"x-message-ttl", 300000}
+                {"x-message-ttl", 3600000} //1hour TTL.
             });
             _model.QueueDeclare("climateTrackrDLQ", durable: true, exclusive: false, autoDelete: false);
             _model.ExchangeDeclare("climateTrackr_dlx", ExchangeType.Direct, durable: true, autoDelete: false);
