@@ -17,8 +17,7 @@ namespace ClimateTrackr_Server.Services
             _model.QueueDeclare("climateTrackr", durable: true, exclusive: false, autoDelete: false, arguments: new Dictionary<string, object>
             {
                 {"x-dead-letter-exchange", "climateTrackr_dlx"},
-                {"x-dead-letter-routing-key", rabbitMqService.GetRoutingKey()},
-                {"x-message-ttl", 3600000} //1hour TTL.
+                {"x-dead-letter-routing-key", rabbitMqService.GetRoutingKey()}
             });
             _model.QueueDeclare("climateTrackrDLQ", durable: true, exclusive: false, autoDelete: false);
             _model.ExchangeDeclare("climateTrackr_dlx", ExchangeType.Direct, durable: true, autoDelete: false);
@@ -33,15 +32,22 @@ namespace ClimateTrackr_Server.Services
             consumer.Received += async (ch, ea) =>
             {
                 var body = ea.Body.ToArray();
-                var message = JsonConvert.DeserializeObject<TempAndHum>(Encoding.UTF8.GetString(body));
-
-                using (var scope = _serviceScopeFactory.CreateScope())
+                try
                 {
-                    var dbContext = scope.ServiceProvider.GetRequiredService<DataContext>();
-                    await WriteToDatabaseAsync(message!, dbContext, ea.DeliveryTag);
-                }
-                await Task.CompletedTask;
+                    var message = JsonConvert.DeserializeObject<TempAndHum>(Encoding.UTF8.GetString(body))!;
+                    using (var scope = _serviceScopeFactory.CreateScope())
+                    {
+                        var dbContext = scope.ServiceProvider.GetRequiredService<DataContext>();
+                        await WriteToDatabaseAsync(message!, dbContext, ea.DeliveryTag);
+                    }
+                    await Task.CompletedTask;
 
+                }
+                catch (Exception ex)
+                {
+                    _model.BasicReject(ea.DeliveryTag, false);
+                    Console.WriteLine($"Error deserialize object: {ex.Message}");
+                }
             };
             _model.BasicConsume("climateTrackr", false, consumer);
             await Task.CompletedTask;
