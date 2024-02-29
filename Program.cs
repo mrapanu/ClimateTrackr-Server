@@ -12,7 +12,7 @@ using Swashbuckle.AspNetCore.Filters;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<DataContext>(o =>
 {
-    o.UseSqlServer(Environment.GetEnvironmentVariable("DB_CONN_STRING"));
+    o.UseMySql(Environment.GetEnvironmentVariable("DB_CONN_STRING")!, new MySqlServerVersion(new Version(8, 3, 0)));
 });
 
 builder.Services.AddControllers();
@@ -84,7 +84,7 @@ using (var serviceScope = app.Services.GetRequiredService<IServiceScopeFactory>(
     {
         try
         {
-            db.EnsureCreated();
+            db.Migrate();
             logger.LogInformation("Database created successfully.");
             // Create default admin user
             var adminUser = new User
