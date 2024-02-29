@@ -35,7 +35,7 @@ namespace ClimateTrackr_Server.Controllers
             var response = new ServiceResponse<TempAndHum>();
             response.Data = await _context.TempAndHums
                 .Where(entries =>
-                    entries.Date >= currenttime.AddMinutes(-2)
+                    entries.Date >= currenttime.AddMinutes(-4)
                     && entries.Date <= currenttime
                     && entries.Room == room)
                 .FirstOrDefaultAsync();
@@ -71,6 +71,7 @@ namespace ClimateTrackr_Server.Controllers
         {
             var filteredData = await _context.TempAndHums
                 .Where(entry => entry.Room == room && entry.Date >= timeStart && entry.Date <= timeEnd)
+                .OrderBy(entry => entry.Date)
                 .ToListAsync();
 
             var dataWithRowNumber = filteredData
