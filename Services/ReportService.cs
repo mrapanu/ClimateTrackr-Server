@@ -17,23 +17,25 @@ namespace ClimateTrackr_Server.Services
         private async Task GenerateHTMLReport(DateTime date, string roomName, int roomId, int days, ReportType reportType)
         {
             DateTime startDate = date.Date.AddDays(-days + 1);
-            DateTime endDate = date.Date;
+            DateTime endDate = date;
             List<TempAndHum> data = new List<TempAndHum>();
-            int stepTime = (days == 1) ? 10 : (days == 7) ? 60 : 120;
+            TimeSpan stepTime = (days == 1) ? TimeSpan.FromMinutes(4) : (days == 7) ? TimeSpan.FromMinutes(30) : TimeSpan.FromHours(2);
 
             using (var scope = _scopeFactory.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<DataContext>();
-                data = dbContext.TempAndHums
-                    .Where(x => x.Date.Date >= startDate && x.Date.Date <= endDate && x.Room == roomName)
-                    .OrderBy(x => x.Date)
-                    .GroupBy(x => new DateTime(x.Date.Year, x.Date.Month, x.Date.Day, x.Date.Hour, x.Date.Minute / stepTime * stepTime, 0))
-                    .Select(g => new TempAndHum
-                    {
-                        Date = g.Key,
-                        Temperature = g.Average(entry => entry.Temperature),
-                        Humidity = g.Average(entry => entry.Humidity)
-                    }).ToList();
+                var filteredData = await dbContext.TempAndHums
+                    .Where(entry => entry.Room == roomName && entry.Date >= startDate && entry.Date <= endDate)
+                    .ToListAsync();
+
+                var dataWithRowNumber = filteredData
+                    .Select((entry, index) => new { Entry = entry, RowNumber = index + 1 })
+                    .ToList();
+
+                data = dataWithRowNumber
+                    .Where(x => x.RowNumber % (int)(stepTime.TotalMinutes / 2) == 0)
+                    .Select(x => x.Entry)
+                    .ToList();
 
                 string html = data.Any() ? GenerateHTML(data, roomName, startDate, endDate) : string.Empty;
                 if (html != string.Empty)
@@ -61,6 +63,12 @@ namespace ClimateTrackr_Server.Services
         {
             data = data.OrderBy(entry => entry.Date).ToList();
             StringBuilder htmlBuilder = new StringBuilder();
+            string titleTemperature = startDate.Date == endDate.Date ?
+                $@"<div class='card-title'>Temperature report for today ({startDate:MM/dd/yyyy}) in {roomName}</div>" :
+                $@"<div class='card-title'>Temperature report from {startDate:MM/dd/yyyy} to {endDate:MM/dd/yyyy} in {roomName}</div>";
+            string titleHumidity = startDate.Date == endDate.Date ?
+                $@"<div class='card-title'>Humidity report for today ({startDate:MM/dd/yyyy}) in {roomName}</div>" :
+                $@"<div class='card-title'>Humidity report from {startDate:MM/dd/yyyy} to {endDate:MM/dd/yyyy} in {roomName}</div>";
 
             htmlBuilder.Append(@"
                 <!DOCTYPE html>
@@ -118,7 +126,7 @@ namespace ClimateTrackr_Server.Services
                 <body>");
 
             htmlBuilder.Append($@"
-                <div class='card-title'>Temperature report from {startDate:MM/dd/yyyy} to {endDate:MM/dd/yyyy} in {roomName}</div>
+                {titleTemperature}
                 <div class='card'>
                     <div class='summary-section'>
                         <div class='summary-item'>
@@ -155,7 +163,7 @@ namespace ClimateTrackr_Server.Services
             </div>");
 
             htmlBuilder.Append($@"
-                <div class='card-title'>Humidity report from {startDate:MM/dd/yyyy} to {endDate:MM/dd/yyyy} in {roomName}</div>
+                {titleHumidity}
                 <div class='card'>
                     <div class='summary-section'>
                         <div class='summary-item'>
@@ -359,6 +367,7 @@ namespace ClimateTrackr_Server.Services
         private bool ShouldGenerateLastWeekReport(DateTime currentTime)
         {
             return currentTime.DayOfWeek == DayOfWeek.Sunday && currentTime.Hour == 23 && currentTime.Minute == 35;
+
         }
 
         private bool ShouldGenerateCurrentDayReport(DateTime currentTime)
