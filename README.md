@@ -37,7 +37,7 @@ You can install the ClimateTrackr components using either Docker or Kubernetes.
 
 1. **Create Network and Volume**
 
-Before running MySQL container, create a Docker network and volume:
+   Before running MySQL container, create a Docker network and volume:
 
    ```bash
    docker network create climatetrackr-default-network
@@ -46,7 +46,7 @@ Before running MySQL container, create a Docker network and volume:
 
 2. **Pull Docker Images or build manually the climatetrackr-server and climatetrackr-client images using Dockerfile from the repository**
    
-Run the following commands to pull the required Docker images:
+   Run the following commands to pull the required Docker images:
 
    ```bash
    docker pull arm64v8/mysql
@@ -70,7 +70,7 @@ Run the following commands to pull the required Docker images:
 
 3. **Run MySQL Container**
 
-Change `MYSQL_ROOT_PASSWORD` environment variable:
+   Change `MYSQL_ROOT_PASSWORD` environment variable:
    ```bash
    docker run -d \
    --name ct-mysql \
@@ -94,7 +94,7 @@ Change `MYSQL_ROOT_PASSWORD` environment variable:
    ```
 5. **Run ClimateTrackr Server Container**
 
-Ensure that MySQL and RabbitMQ containers are started before starting the ClimateTrackr server. Change the `TZ`, `DB_CONN_STRING`, `RABBITMQ_CONN_STRING`, `RABBITMQ_EXCHANGE_NAME`, `RABBITMQ_ROUTING_KEY`, `JWT_SECRET_TOKEN` environment variables.
+   Ensure that MySQL and RabbitMQ containers are started before starting the ClimateTrackr server. Change the `TZ`, `DB_CONN_STRING`, `RABBITMQ_CONN_STRING`, `RABBITMQ_EXCHANGE_NAME`, `RABBITMQ_ROUTING_KEY`, `JWT_SECRET_TOKEN` environment variables.
    ```bash
    docker run -d \
    --name ct-server \
@@ -115,7 +115,7 @@ Ensure that MySQL and RabbitMQ containers are started before starting the Climat
    ```
 6. **Run ClimateTrackr Client Container**
 
-Change `REACT_APP_API_URL` environment variable:
+   Change `REACT_APP_API_URL` environment variable:
    ```bash
    docker run -d \
    --name ct-client \
@@ -128,15 +128,15 @@ Change `REACT_APP_API_URL` environment variable:
 
 #### Install with Docker Compose
 
-To install ClimateTrackr using Docker Compose, follow these steps:
+   To install ClimateTrackr using Docker Compose, follow these steps:
 
 1. **Download docker-compose.yaml**
 
-Download the `docker-compose.yaml` file from our repository.
+   Download the `docker-compose.yaml` file from our repository.
 
 2. **Adjust Environment Variables**
 
-Open the downloaded `docker-compose.yaml` file in a text editor, and update the following environment variables with your specific values:
+   Open the downloaded `docker-compose.yaml` file in a text editor, and update the following environment variables with your specific values:
    - `TZ`: Your timezone.
    - `DB_CONN_STRING`: Connection string for MySQL. Replace `<mysqlpasswd>` with your MySQL root password.
    - `RABBITMQ_EXCHANGE_NAME`: Name of the RabbitMQ exchange.
@@ -146,7 +146,7 @@ Open the downloaded `docker-compose.yaml` file in a text editor, and update the 
 
 3. **Run Docker Compose**
 
-Open a terminal in the directory where you downloaded `docker-compose.yaml` and run the following command:
+   Open a terminal in the directory where you downloaded `docker-compose.yaml` and run the following command:
    ```bash
    docker-compose up -d
    ```
