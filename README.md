@@ -35,16 +35,18 @@ You can install the ClimateTrackr components using either Docker or Kubernetes.
 
 #### Manual Installation:
 
-1. **Create Network and Volume**:
-   Before running MySQL container, create a Docker network and volume:
+1. **Create Network and Volume**
+
+Before running MySQL container, create a Docker network and volume:
 
    ```bash
    docker network create climatetrackr-default-network
    docker volume create ct_mysql_data
    ```
 
-2. **Pull Docker Images or build manually the climatetrackr-server and climatetrackr-client images using Dockerfile from the repository.**:
-   Run the following commands to pull the required Docker images:
+2. **Pull Docker Images or build manually the climatetrackr-server and climatetrackr-client images using Dockerfile from the repository**
+   
+Run the following commands to pull the required Docker images:
 
    ```bash
    docker pull arm64v8/mysql
@@ -66,8 +68,9 @@ You can install the ClimateTrackr components using either Docker or Kubernetes.
    docker build -t climatetrackr-server .
    ```
 
-3. **Run MySQL Container**:
-   Change `MYSQL_ROOT_PASSWORD` environment variable:
+3. **Run MySQL Container**
+
+Change `MYSQL_ROOT_PASSWORD` environment variable:
    ```bash
    docker run -d \
    --name ct-mysql \
@@ -78,7 +81,8 @@ You can install the ClimateTrackr components using either Docker or Kubernetes.
    --restart unless-stopped \
    arm64v8/mysql
    ```
-4. **Run RabbitMQ Container**:
+4. **Run RabbitMQ Container**
+
    ```bash
    docker run -d \
    --name ct-rabbitmq \
@@ -88,9 +92,9 @@ You can install the ClimateTrackr components using either Docker or Kubernetes.
    --restart unless-stopped \
    rabbitmq:3-management
    ```
-5. **Run ClimateTrackr Server Container:**
-   Ensure that MySQL and RabbitMQ containers are started before starting the ClimateTrackr server.
-   Change the `TZ`, `DB_CONN_STRING`, `RABBITMQ_CONN_STRING`, `RABBITMQ_EXCHANGE_NAME`, `RABBITMQ_ROUTING_KEY`, `JWT_SECRET_TOKEN` environment variables.
+5. **Run ClimateTrackr Server Container**
+
+Ensure that MySQL and RabbitMQ containers are started before starting the ClimateTrackr server. Change the `TZ`, `DB_CONN_STRING`, `RABBITMQ_CONN_STRING`, `RABBITMQ_EXCHANGE_NAME`, `RABBITMQ_ROUTING_KEY`, `JWT_SECRET_TOKEN` environment variables.
    ```bash
    docker run -d \
    --name ct-server \
@@ -109,8 +113,9 @@ You can install the ClimateTrackr components using either Docker or Kubernetes.
    --depends-on ct-rabbitmq \
    mrapanu/climatetrackr-server:latest
    ```
-6. **Run ClimateTrackr Client Container**:
-   Change `REACT_APP_API_URL` environment variable:
+6. **Run ClimateTrackr Client Container**
+
+Change `REACT_APP_API_URL` environment variable:
    ```bash
    docker run -d \
    --name ct-client \
@@ -125,11 +130,13 @@ You can install the ClimateTrackr components using either Docker or Kubernetes.
 
 To install ClimateTrackr using Docker Compose, follow these steps:
 
-1. **Download docker-compose.yaml**: 
-   Download the `docker-compose.yaml` file from our repository.
+1. **Download docker-compose.yaml**
 
-2. **Adjust Environment Variables**:
-   Open the downloaded `docker-compose.yaml` file in a text editor, and update the following environment variables with your specific values:
+Download the `docker-compose.yaml` file from our repository.
+
+2. **Adjust Environment Variables**
+
+Open the downloaded `docker-compose.yaml` file in a text editor, and update the following environment variables with your specific values:
    - `TZ`: Your timezone.
    - `DB_CONN_STRING`: Connection string for MySQL. Replace `<mysqlpasswd>` with your MySQL root password.
    - `RABBITMQ_EXCHANGE_NAME`: Name of the RabbitMQ exchange.
@@ -137,10 +144,12 @@ To install ClimateTrackr using Docker Compose, follow these steps:
    - `JWT_SECRET_TOKEN`: Your JWT secret token (minimum 16 characters).
    - `REACT_APP_API_URL`: API URL for the client. Replace `<Your_Docker_Server_IP>` with your Docker server's IP address.
 
-3. **Run Docker Compose**:
-   Open a terminal in the directory where you downloaded `docker-compose.yaml` and run the following command:
+3. **Run Docker Compose**
+
+Open a terminal in the directory where you downloaded `docker-compose.yaml` and run the following command:
    ```bash
    docker-compose up -d
+   ```
 
 
 ### Install with Kubernetes
