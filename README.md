@@ -94,7 +94,7 @@ You can install the ClimateTrackr components using either Docker or Kubernetes.
    ```
 5. **Run ClimateTrackr Server Container**
 
-   Ensure that MySQL and RabbitMQ containers are started before starting the ClimateTrackr server. Change the `TZ`, `DB_CONN_STRING`, `RABBITMQ_CONN_STRING`, `RABBITMQ_EXCHANGE_NAME`, `RABBITMQ_ROUTING_KEY`, `JWT_SECRET_TOKEN` environment variables.
+   Ensure that MySQL and RabbitMQ containers are started before starting the ClimateTrackr server. Change the `TZ`, `DB_CONN_STRING`,`RABBITMQ_CONN_STRING`, `RABBITMQ_EXCHANGE_NAME` `RABBITMQ_ROUTING_KEY`, `JWT_SECRET_TOKEN` environment variables.
    ```bash
    docker run -d \
    --name ct-server \
@@ -132,7 +132,7 @@ You can install the ClimateTrackr components using either Docker or Kubernetes.
 
 1. **Download docker-compose.yaml**
 
-   Download the `docker-compose.yaml` file from our repository.
+   Download the `docker-compose.yaml` file from ClimateTrackr-Server or ClimateTrackr-Client repository.
 
 2. **Adjust Environment Variables**
 
