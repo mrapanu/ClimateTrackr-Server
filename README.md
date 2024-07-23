@@ -171,7 +171,7 @@ Check the guides from:
 
 Once installed, you can use the ClimateTrackr system as follows:
 
-1. Access the ClimateTrackr Client web application using a web browser.
-2. Log in with your credentials to access the available features.
-3. Admin users can perform tasks such as managing users, rooms, SMTP settings, and viewing reports.
+1. Access the ClimateTrackr Client web application (http://docker_ip_addr:ct-client-port) using a web browser.
+2. Log in with your credentials to access the available features. The default credentials are user: `ctadmin`, pass: `ctadmin`
+3. Admin users can perform tasks such as managing users, rooms, SMTP settings, viewing the activity of other users.
 4. Normal users can view climate data, graphs, and configure email notifications.
