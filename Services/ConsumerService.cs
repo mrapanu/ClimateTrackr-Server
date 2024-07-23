@@ -69,7 +69,7 @@ namespace ClimateTrackr_Server.Services
                 var tempAndHum = new TempAndHum
                 {
                     Room = message.Room,
-                    Date = message.Date,
+                    Date = DateTime.Now,  //Changed with server time to avoid other issues from agents
                     Temperature = message.Temperature,
                     Humidity = message.Humidity
                 };
